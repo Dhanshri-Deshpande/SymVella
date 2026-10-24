@@ -5,7 +5,7 @@ import {
   Flame, 
   Volume2, 
   ArrowRight, 
-  BrainCircuit, 
+  Stethoscope, 
   ChevronRight,
   Leaf,
   Droplet,
@@ -28,6 +28,7 @@ import confetti from "canvas-confetti";
 export default function HomeDashboard() {
   const { 
     userProfile, 
+    currentUser,
     symptomLogs, 
     periodHistory,
     setIsCheckInOpen, 
@@ -38,6 +39,11 @@ export default function HomeDashboard() {
     setIsDailyReportOpen,
     setIsPeriodModalOpen
   } = useApp();
+
+  const displayName = [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(" ").trim() 
+    || currentUser?.name
+    || userProfile?.name 
+    || "Friend";
 
   const recentLog = symptomLogs[symptomLogs.length - 1];
   const cycleDay = recentLog?.cycleDay || 21;
@@ -66,7 +72,7 @@ export default function HomeDashboard() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> SakhiAI Daily Companion
+                <Sparkles className="w-3.5 h-3.5" /> Symvella Daily Companion
               </span>
               <button 
                 onClick={triggerStreakCelebration}
@@ -77,7 +83,7 @@ export default function HomeDashboard() {
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
-              Namaste, {userProfile.name} 🌸
+              Namaste, {displayName} 🌸
             </h2>
             <p className="text-pink-100/90 text-sm max-w-lg leading-relaxed">
               Your body is currently in the <strong>Late Luteal Phase</strong> (Day {cycleDay} of {userProfile.cycleLength}). Today's check-in takes only 90 seconds.
@@ -266,24 +272,24 @@ export default function HomeDashboard() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary)] flex items-center gap-1.5 border border-[var(--color-border)]">
-                <BrainCircuit className="w-3.5 h-3.5" /> Explainable AI (XAI)
+                <Stethoscope className="w-3.5 h-3.5" /> Clinical Pattern Assessment
               </span>
               <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                Moderate Risk Pattern
+                Moderate Risk Profile
               </span>
             </div>
             <h3 className="text-base font-bold text-gray-900 mb-1">
-              Ovulatory / PCOS Pattern Screening
+              Ovulatory Irregularity & PCOS Phenotype
             </h3>
             <p className="text-xs text-gray-600 mb-3">
-              Cycle length fluctuated by <strong>±11 days</strong> with recurring luteal acne and fatigue spikes.
+              Cycle length variability recorded at <strong>±11 days</strong> with recurring luteal acne and afternoon fatigue.
             </p>
 
-            {/* Quick XAI Factor Bar Preview */}
+            {/* Clinical Indicator Bar Preview */}
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between text-[11px] text-gray-500">
-                <span>Cycle Length Variance (Top Driver)</span>
-                <span className="font-semibold text-[var(--color-primary)]">+42% weight</span>
+                <span>Cycle Length Variance (Primary Clinical Indicator)</span>
+                <span className="font-semibold text-[var(--color-primary)]">+42% clinical weight</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                 <div className="bg-[var(--color-primary)] h-2 rounded-full" style={{ width: "42%" }} />
@@ -292,12 +298,12 @@ export default function HomeDashboard() {
           </div>
 
           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">Confidence: High (30 Days Logged)</span>
+            <span className="text-[11px] text-gray-400">Diagnostic Concordance: High (FOGSI Aligned)</span>
             <button
-              onClick={() => setActiveTab("xai")}
+              onClick={() => setActiveTab("reports")}
               className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1"
             >
-              View Full SHAP Analysis <ChevronRight className="w-3.5 h-3.5" />
+              View Full Clinical Report <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

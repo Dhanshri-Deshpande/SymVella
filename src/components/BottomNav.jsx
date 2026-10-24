@@ -3,9 +3,9 @@ import { useApp } from "../context/AppContext";
 import { 
   Home, 
   ClipboardCheck, 
-  BrainCircuit, 
   FileText, 
-  BookOpen 
+  BookOpen,
+  Settings 
 } from "lucide-react";
 
 export default function BottomNav() {
@@ -13,10 +13,10 @@ export default function BottomNav() {
 
   const tabs = [
     { id: "home", label: "Dashboard", icon: Home },
-    { id: "xai", label: "XAI Insights", icon: BrainCircuit },
-    { id: "checkin", label: "Log Day", icon: ClipboardCheck, isAction: true },
     { id: "reports", label: "Reports", icon: FileText },
-    { id: "info", label: "Info Hub", icon: BookOpen }
+    { id: "checkin", label: "Log Day", icon: ClipboardCheck, isAction: true },
+    { id: "info", label: "Info Hub", icon: BookOpen },
+    { id: "settings", label: "Settings", icon: Settings }
   ];
 
   return (

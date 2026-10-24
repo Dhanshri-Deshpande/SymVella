@@ -60,3 +60,15 @@ console.log("\n[TEST 4] Hindi Localization Check:");
 console.log("Hindi Reason:", repHi.reasons[0]);
 console.log("Hindi Upay Title:", repHi.upayList[0]?.title);
 console.log("Hindi Driver:", repHi.upayList[0]?.shapExplanation);
+
+// 5. TEST: Date of Birth and Age Validation
+import { calculateAge } from "./src/utils/dateUtils.js";
+const now = new Date();
+const dob12 = new Date(now.getFullYear() - 12, now.getMonth(), now.getDate()).toISOString().split("T")[0];
+const dob13 = new Date(now.getFullYear() - 13, now.getMonth(), now.getDate()).toISOString().split("T")[0];
+const dob26 = new Date(now.getFullYear() - 26, now.getMonth(), now.getDate()).toISOString().split("T")[0];
+
+console.log("\n[TEST 5] DOB & Age Validation (Must be above 13):");
+console.log("  * DOB: " + dob12 + " -> Age: " + calculateAge(dob12) + " yrs -> Valid: " + (calculateAge(dob12) >= 13) + " (BLOCKED)");
+console.log("  * DOB: " + dob13 + " -> Age: " + calculateAge(dob13) + " yrs -> Valid: " + (calculateAge(dob13) >= 13) + " (ALLOWED)");
+console.log("  * DOB: " + dob26 + " -> Age: " + calculateAge(dob26) + " yrs -> Valid: " + (calculateAge(dob26) >= 13) + " (ALLOWED)");

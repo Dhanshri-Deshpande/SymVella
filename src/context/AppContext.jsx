@@ -1,15 +1,183 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { INITIAL_USER_PROFILE, INITIAL_SYMPTOM_LOGS } from "../data/sampleData";
 import { generateDailyReport } from "../data/ghareluUpayEngine";
+import { synthesizeGnaniSpeech, stopSpeechPlayback } from "../services/gnaniService";
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
   const theme = "blossom-rows";
   const [activeTab, setActiveTab] = useState("home");
-  const [userProfile, setUserProfile] = useState(INITIAL_USER_PROFILE);
+  // 1. Authentication & Registered Patient State (loaded from localStorage)
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem("symvella_current_user") || localStorage.getItem("sakhi_current_user");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.firstName || parsed.name)) {
+          return parsed;
+        }
+      } catch (e) {}
+    }
+    return {
+      firstName: "Dhanshri",
+      lastName: "",
+      email: "dhanshri@healthmail.com",
+      phone: "9876543210",
+      location: "Pune, Maharashtra",
+      dob: "1998-04-15",
+      age: 28,
+      isVerified: true
+    };
+  });
+
+  // 2. User Profile state (dynamically synthesized with currentUser and saved profile)
+  const [userProfile, setUserProfile] = useState(() => {
+    let base = { ...INITIAL_USER_PROFILE };
+    const savedProfile = localStorage.getItem("symvella_user_profile") || localStorage.getItem("sakhi_user_profile");
+    if (savedProfile) {
+      try {
+        base = { ...base, ...JSON.parse(savedProfile) };
+      } catch (e) {}
+    }
+    const savedUser = localStorage.getItem("symvella_current_user") || localStorage.getItem("sakhi_current_user");
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser);
+        const fullName = [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || u.name || u.firstName;
+        if (fullName) base.name = fullName;
+        if (u.age) base.age = Number(u.age);
+        if (u.location) base.location = u.location;
+        if (u.email) base.email = u.email;
+        if (u.phone) base.phone = u.phone;
+        if (u.dob) base.dob = u.dob;
+      } catch (e) {}
+    } else {
+      base.name = "Dhanshri";
+    }
+    return base;
+  });
+
   const [language, setLanguage] = useState("en");
   const [symptomLogs, setSymptomLogs] = useState(INITIAL_SYMPTOM_LOGS);
+
+  // Keep localStorage synced whenever userProfile or currentUser changes
+  useEffect(() => {
+    if (userProfile && userProfile.name) {
+      localStorage.setItem("symvella_user_profile", JSON.stringify(userProfile));
+    }
+  }, [userProfile]);
+
+  useEffect(() => {
+    if (currentUser && (currentUser.firstName || currentUser.name)) {
+      localStorage.setItem("symvella_current_user", JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
+
+  // Default to false so the user is greeted with the Login / Sign In page first!
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return sessionStorage.getItem("symvella_authenticated") === "true" || sessionStorage.getItem("sakhi_authenticated") === "true";
+  });
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const login = ({ identifier, otp }) => {
+    // Check if we have an existing registered user
+    const savedUserStr = localStorage.getItem("symvella_current_user") || localStorage.getItem("sakhi_current_user");
+    let userToUse = null;
+    if (savedUserStr) {
+      try {
+        userToUse = JSON.parse(savedUserStr);
+      } catch (e) {}
+    }
+
+    if (!userToUse || !userToUse.firstName) {
+      const cleanIdent = (identifier || "").trim();
+      const isEmail = cleanIdent.includes("@");
+      const isPhone = /^\d+$/.test(cleanIdent);
+      let derivedFirst = "Dhanshri";
+      if (!isEmail && !isPhone && cleanIdent.length > 0) {
+        derivedFirst = cleanIdent.split(" ")[0];
+      } else if (isEmail) {
+        derivedFirst = cleanIdent.split("@")[0].replace(/[._-]/g, " ");
+        derivedFirst = derivedFirst.charAt(0).toUpperCase() + derivedFirst.slice(1);
+      }
+      userToUse = {
+        firstName: derivedFirst,
+        lastName: "",
+        email: isEmail ? cleanIdent : "dhanshri@healthmail.com",
+        phone: isPhone ? cleanIdent : "9876543210",
+        location: "Pune, Maharashtra",
+        dob: "1998-04-15",
+        age: 28,
+        isVerified: true
+      };
+      localStorage.setItem("symvella_current_user", JSON.stringify(userToUse));
+    }
+
+    const fullName = [userToUse.firstName, userToUse.lastName].filter(Boolean).join(" ").trim() || userToUse.name || userToUse.firstName;
+
+    setCurrentUser(userToUse);
+    setUserProfile(prev => {
+      const updated = {
+        ...prev,
+        name: fullName,
+        age: Number(userToUse.age) || prev.age,
+        location: userToUse.location || prev.location,
+        email: userToUse.email || prev.email,
+        phone: userToUse.phone || prev.phone,
+        dob: userToUse.dob || prev.dob
+      };
+      localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
+      return updated;
+    });
+
+    setIsAuthenticated(true);
+    setActiveTab("home");
+    sessionStorage.setItem("symvella_authenticated", "true");
+    localStorage.setItem("symvella_authenticated", "true");
+    setIsAuthModalOpen(false);
+  };
+
+  const signup = (userData) => {
+    const fullName = [userData.firstName, userData.lastName].filter(Boolean).join(" ").trim() || userData.firstName;
+    const registeredUser = {
+      ...userData,
+      name: fullName
+    };
+
+    setCurrentUser(registeredUser);
+    localStorage.setItem("symvella_current_user", JSON.stringify(registeredUser));
+
+    setUserProfile(prev => {
+      const updated = {
+        ...prev,
+        name: fullName,
+        age: Number(userData.age) || prev.age,
+        location: userData.location || prev.location,
+        email: userData.email || prev.email,
+        phone: userData.phone || prev.phone,
+        dob: userData.dob || prev.dob
+      };
+      localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
+      return updated;
+    });
+
+    setIsAuthenticated(true);
+    setActiveTab("home");
+    sessionStorage.setItem("symvella_authenticated", "true");
+    localStorage.setItem("symvella_authenticated", "true");
+    setIsAuthModalOpen(false);
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem("symvella_authenticated");
+    localStorage.removeItem("symvella_authenticated");
+    sessionStorage.removeItem("sakhi_authenticated");
+    localStorage.removeItem("sakhi_authenticated");
+    setActiveTab("home");
+    setIsAuthModalOpen(false);
+  };
   
   // Modals & Overlays
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
@@ -204,23 +372,28 @@ export function AppProvider({ children }) {
     }
   };
 
-  // Text-to-Speech synthesizer
-  const speakText = (text, langCode = language) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (langCode === "hi") utterance.lang = "hi-IN";
-    else if (langCode === "ta") utterance.lang = "ta-IN";
-    else if (langCode === "mr") utterance.lang = "mr-IN";
-    else utterance.lang = "en-IN";
-    utterance.rate = 0.95;
-    window.speechSynthesis.speak(utterance);
+  // Text-to-Speech synthesizer (Gnani.ai Timbre TTS API with browser Web Speech fallback)
+  const speakText = async (text, langCode = language) => {
+    try {
+      const res = await synthesizeGnaniSpeech({ text, language: langCode });
+      return res;
+    } catch (e) {
+      console.warn("TTS error:", e);
+    }
   };
 
   return (
     <AppContext.Provider
       value={{
         theme,
+        currentUser,
+        setCurrentUser,
+        isAuthenticated,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
+        login,
+        signup,
+        logout,
         activeTab,
         setActiveTab,
         userProfile,
@@ -248,7 +421,8 @@ export function AppProvider({ children }) {
         alarmEscalationStage,
         setAlarmEscalationStage,
         playChime,
-        speakText
+        speakText,
+        stopSpeechPlayback
       }}
     >
       {children}

@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useApp } from "../context/AppContext";
 import { 
-  SAKHI_LANGUAGES, 
+  SYMVELLA_LANGUAGES, 
   SUGGESTED_QUESTIONS, 
-  getLocalSakhiResponse 
+  getLocalSymvellaResponse 
 } from "../data/botKnowledge";
 import { 
   Send, 
   Mic, 
   MicOff, 
   Volume2, 
+  VolumeX,
   Heart, 
   Sparkles, 
   ShieldCheck, 
@@ -17,8 +18,33 @@ import {
   Settings, 
   MessageCircleHeart,
   ChevronDown,
-  Minimize2
+  Minimize2,
+  Zap,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  Radio,
+  Loader2,
+  BookOpen,
+  ExternalLink
 } from "lucide-react";
+import { 
+  getSavedGnaniConfig, 
+  saveGnaniConfig, 
+  callGnaniLLM, 
+  callGeminiGenerativeAI,
+  synthesizeGnaniSpeech,
+  stopSpeechPlayback,
+  transcribeWithGnaniSTT,
+  startMicrophoneRecording,
+  stopMicrophoneRecording,
+  testGnaniConnection, 
+  GNANI_TOKEN_LIMIT, 
+  resetTokenUsage 
+} from "../services/gnaniService";
+import { generateRAGResponse } from "../services/ragService";
 
 export default function FloatingChatbot() {
   const { language, setLanguage, userProfile, speakText, isChatOpen, setIsChatOpen } = useApp();
@@ -28,10 +54,10 @@ export default function FloatingChatbot() {
       id: "m_init",
       sender: "sakhi",
       text: language === "hi" 
-        ? "नमस्ते! मैं आपकी स्वास्थ्य सखी (SakhiAI) हूँ। आप मुझसे माहवारी, पीरियड्स के दर्द, पीसीओएस (PCOS), नींद, या किसी भी स्वास्थ्य चिंता के बारे में अपनी भाषा में पूछ सकती हैं।"
+        ? "नमस्ते! मैं आपकी स्वास्थ्य साथी (Symvella) हूँ। आप मुझसे माहवारी, पीरियड्स के दर्द, पीसीओएस (PCOS), नींद, या किसी भी स्वास्थ्य चिंता के बारे में अपनी भाषा में पूछ सकती हैं।"
         : language === "hinglish"
-        ? "Namaste! Main aapki health companion SakhiAI hoon. Period pain, cycle dates, PCOS ya mood swings ke baare mein freely pooch sakti hain. I'm here to help!"
-        : "Hello! I am SakhiAI, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language.",
+        ? "Namaste! Main aapki health companion Symvella hoon. Period pain, cycle dates, PCOS ya mood swings ke baare mein freely pooch sakti hain. I'm here to help!"
+        : "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language.",
       timestamp: "Just now",
       source: "Clinical Companion Standard"
     }
@@ -42,10 +68,35 @@ export default function FloatingChatbot() {
   const [isTyping, setIsTyping] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   
-  // Model engine configuration (Local Built-in vs Ollama)
-  const [engineType, setEngineType] = useState("local-builtin");
-  const [ollamaEndpoint, setOllamaEndpoint] = useState("http://localhost:11434");
-  const [ollamaModel, setOllamaModel] = useState("qwen2.5:1.5b");
+  // Exclusively Gnani.ai Model Configuration & Token Tracking
+  const [gnaniApiKey, setGnaniApiKey] = useState(() => getSavedGnaniConfig().apiKey);
+  const [gnaniModel, setGnaniModel] = useState(() => getSavedGnaniConfig().model || "Gnani Prisma V2.5");
+  const [gnaniVoice, setGnaniVoice] = useState(() => getSavedGnaniConfig().voice || "Nalini");
+  const [gnaniTokensUsed, setGnaniTokensUsed] = useState(() => getSavedGnaniConfig().tokensUsed);
+  const [showGnaniKey, setShowGnaniKey] = useState(false);
+  const [testStatus, setTestStatus] = useState(null);
+
+  // Voice recording & transcription state
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [playingMessageId, setPlayingMessageId] = useState(null);
+  const [expandedSources, setExpandedSources] = useState({});
+
+  const toggleSourceExpansion = (msgId) => {
+    setExpandedSources(prev => ({ ...prev, [msgId]: !prev[msgId] }));
+  };
+
+  const handleTestGnani = async () => {
+    setTestStatus({ loading: true, message: "Verifying credentials with Gnani.ai..." });
+    saveGnaniConfig({ apiKey: gnaniApiKey, model: gnaniModel, voice: gnaniVoice });
+    const res = await testGnaniConnection(gnaniApiKey);
+    setTestStatus({ loading: false, success: res.success, message: res.message });
+    setTimeout(() => setTestStatus(null), 5000);
+  };
+
+  const handleResetTokens = () => {
+    resetTokenUsage();
+    setGnaniTokensUsed(0);
+  };
 
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -56,17 +107,54 @@ export default function FloatingChatbot() {
     }
   }, [messages, isTyping, isChatOpen]);
 
-  // Speech Recognition
-  const toggleSpeechRecognition = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+  // Handle Speech-to-Text via Gnani Prisma STT (with fallback to browser Web Speech)
+  const toggleSpeechRecognition = async () => {
+    if (isListening) {
+      // User tapped stop: finish microphone recording and send audio to Gnani STT
+      setIsListening(false);
+      setIsTranscribing(true);
+
+      try {
+        const audioBlob = await stopMicrophoneRecording();
+        if (gnaniApiKey) {
+          const sttRes = await transcribeWithGnaniSTT({
+            audioBlob,
+            apiKey: gnaniApiKey,
+            language
+          });
+          if (sttRes && sttRes.transcript) {
+            setInputVal(sttRes.transcript);
+            handleSend(sttRes.transcript, true);
+          }
+        } else {
+          // If no Gnani key, prompt user with link
+          alert("💡 Please configure your Gnani API key from https://app.gnani.ai/voice/speech-to-text in chat settings ⚙️.");
+        }
+      } catch (sttErr) {
+        console.warn("Gnani STT notice, trying browser recognition fallback:", sttErr);
+        runBrowserSpeechFallback();
+      } finally {
+        setIsTranscribing(false);
+      }
       return;
     }
 
-    if (isListening) {
-      recognitionRef.current?.stop();
+    // Start Recording user microphone
+    try {
+      await startMicrophoneRecording();
+      setIsListening(true);
+    } catch (micErr) {
+      console.warn("MediaRecorder mic access error, attempting browser speech:", micErr);
+      runBrowserSpeechFallback();
+    }
+  };
+
+  const runBrowserSpeechFallback = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Microphone recording error. Please allow microphone access or use Chrome/Edge.");
       setIsListening(false);
+      setIsTranscribing(false);
       return;
     }
 
@@ -82,22 +170,52 @@ export default function FloatingChatbot() {
 
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
-      recognition.onerror = () => setIsListening(false);
+      recognition.onerror = () => {
+        setIsListening(false);
+        setIsTranscribing(false);
+      };
       recognition.onresult = (e) => {
         const transcript = e.results[0][0].transcript;
         setInputVal(transcript);
-        handleSend(transcript);
+        handleSend(transcript, true);
       };
 
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      console.error("Speech Recognition Error:", err);
+      console.error("Browser speech recognition failed:", err);
       setIsListening(false);
+      setIsTranscribing(false);
     }
   };
 
-  const handleSend = async (queryText = inputVal) => {
+  // Handle Text-to-Speech via Gnani Timbre TTS (with fallback)
+  const handlePlaySpeech = async (text, messageId) => {
+    if (playingMessageId === messageId) {
+      stopSpeechPlayback();
+      setPlayingMessageId(null);
+      return;
+    }
+
+    setPlayingMessageId(messageId);
+    try {
+      await synthesizeGnaniSpeech({
+        text,
+        apiKey: gnaniApiKey,
+        language,
+        voice: gnaniVoice
+      });
+    } catch (err) {
+      console.warn("TTS error:", err);
+    } finally {
+      const estimatedSec = Math.max(3, Math.min(25, text.split(" ").length / 2.5));
+      setTimeout(() => {
+        setPlayingMessageId(prev => prev === messageId ? null : prev);
+      }, estimatedSec * 1000);
+    }
+  };
+
+  const handleSend = async (queryText = inputVal, isVoiceInput = false) => {
     const query = queryText.trim();
     if (!query) return;
 
@@ -105,7 +223,8 @@ export default function FloatingChatbot() {
       id: "u_" + Date.now(),
       sender: "user",
       text: query,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isVoice: isVoiceInput
     };
 
     setMessages(prev => [...prev, userMsg]);
@@ -113,51 +232,45 @@ export default function FloatingChatbot() {
     setIsTyping(true);
 
     try {
-      if (engineType === "ollama") {
-        try {
-          const res = await fetch(`${ollamaEndpoint}/api/generate`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              model: ollamaModel,
-              prompt: `You are SakhiAI, a warm, supportive, multilingual women's health companion. Explain simply in ${language}. Never diagnose or prescribe medicines. User says: "${query}"`,
-              stream: false
-            })
-          });
-          const data = await res.json();
-          const botReply = {
-            id: "b_" + Date.now(),
-            sender: "sakhi",
-            text: data.response || "I could not generate a response.",
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            source: `Local Ollama (${ollamaModel})`
-          };
-          setMessages(prev => [...prev, botReply]);
-          setIsTyping(false);
-          return;
-        } catch (e) {
-          console.warn("Ollama fallback:", e);
-        }
+      // Exclusively invoke Gnani Model with RAG grounding
+      const ragRes = await generateRAGResponse({
+        query,
+        language,
+        userProfile,
+        gnaniApiKey,
+        gnaniModel
+      });
+
+      if (ragRes.totalTokensUsed) {
+        setGnaniTokensUsed(ragRes.totalTokensUsed);
       }
 
-      // Default local engine (zero-token cost)
-      setTimeout(() => {
-        const reply = getLocalSakhiResponse(query, language, { userProfile });
-        const botReply = {
-          id: "b_" + Date.now(),
-          sender: "sakhi",
-          text: reply.text,
-          isAlert: reply.isAlert,
-          source: reply.source,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        setMessages(prev => [...prev, botReply]);
-        setIsTyping(false);
-      }, 500);
+      const botReply = {
+        id: "b_" + Date.now(),
+        sender: "symvella",
+        text: ragRes.text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        source: ragRes.sources,
+        retrievedDocs: ragRes.retrievedDocs,
+        ragConfidence: ragRes.ragConfidence,
+        isRAG: ragRes.isRAG
+      };
 
-    } catch (err) {
+      setMessages(prev => [...prev, botReply]);
+    } catch (ragErr) {
+      console.warn("RAG pipeline error, falling back to local clinical engine:", ragErr);
+      const reply = getLocalSymvellaResponse(query, language, { userProfile });
+      const botReply = {
+        id: "b_" + Date.now(),
+        sender: "symvella",
+        text: reply.text,
+        isAlert: reply.isAlert,
+        source: reply.source,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      setMessages(prev => [...prev, botReply]);
+    } finally {
       setIsTyping(false);
-      console.error(err);
     }
   };
 
@@ -173,15 +286,19 @@ export default function FloatingChatbot() {
           {/* Chat Window Header */}
           <div className="p-3.5 bg-[var(--color-primary)] text-white flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold">
-                <Heart className="w-4 h-4 fill-white" />
-              </div>
+              <img 
+                src="/logo.png" 
+                alt="Symvella" 
+                className="w-8 h-8 rounded-xl object-cover bg-white shadow-xs" 
+              />
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h4 className="font-bold text-sm leading-none">Sakhi AI Companion</h4>
+                  <h4 className="font-bold text-sm leading-none">Symvella Companion</h4>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
-                <span className="text-[10px] text-pink-200">Multilingual & Voice Enabled</span>
+                <span className="text-[10px] text-pink-100 flex items-center gap-1 font-medium">
+                  <Zap className="w-2.5 h-2.5 text-amber-300" /> Model: {gnaniModel || "Gnani Prisma V2.5"}
+                </span>
               </div>
             </div>
 
@@ -189,7 +306,7 @@ export default function FloatingChatbot() {
               <button
                 onClick={() => setShowConfig(prev => !prev)}
                 className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 hover:text-white transition-colors"
-                title="Model settings"
+                title="Gnani Model settings"
               >
                 <Settings className="w-3.5 h-3.5" />
               </button>
@@ -203,44 +320,170 @@ export default function FloatingChatbot() {
             </div>
           </div>
 
-          {/* Engine Config (Collapsible) */}
+          {/* Gnani AI Model Configuration (Collapsible) */}
           {showConfig && (
-            <div className="p-3 bg-gray-50 border-b border-gray-200 text-xs space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">Inference Engine:</span>
-                <span className="text-[10px] text-gray-500 font-mono">Zero API Cost</span>
-              </div>
-              <div className="flex gap-2">
+            <div className="p-3 bg-gray-50 border-b border-gray-200 text-xs space-y-2.5 max-h-64 overflow-y-auto">
+              <div className="p-2.5 bg-white rounded-xl border border-purple-200 space-y-2 animate-in fade-in">
+                
+                {/* Header & Dashboard Link */}
+                <div className="flex items-center justify-between pb-1.5 border-b border-purple-100">
+                  <span className="font-bold text-purple-950 text-[11px] flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-purple-600" /> Gnani.ai Model Configuration
+                  </span>
+                  <a
+                    href="https://app.gnani.ai/voice/speech-to-text"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:text-purple-800 text-[10px] font-semibold underline flex items-center gap-0.5 cursor-pointer"
+                    title="Open app.gnani.ai Speech to Text dashboard"
+                  >
+                    app.gnani.ai/voice ↗
+                  </a>
+                </div>
+
+                {/* Free Token Quota Tracker */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center text-[10px]">
+                    <span className="font-semibold text-purple-900 flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-purple-600" /> Free Token Quota:
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono font-bold text-purple-800">
+                        {gnaniTokensUsed.toLocaleString()} / {GNANI_TOKEN_LIMIT.toLocaleString()}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleResetTokens}
+                        title="Reset local counter"
+                        className="text-gray-400 hover:text-purple-600 cursor-pointer"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="w-full bg-purple-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        gnaniTokensUsed >= GNANI_TOKEN_LIMIT ? "bg-rose-500" : "bg-purple-600"
+                      }`}
+                      style={{ width: `${Math.min(100, (gnaniTokensUsed / GNANI_TOKEN_LIMIT) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Model specifications badge */}
+                <div className="p-1.5 rounded-lg bg-purple-50/70 border border-purple-150 text-[10px] grid grid-cols-3 gap-1 text-purple-900">
+                  <div>
+                    <span className="text-gray-500 block text-[8px]">STT Model:</span>
+                    <strong className="font-mono text-purple-800 text-[9px]">prisma-v2.5</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[8px]">TTS Model:</span>
+                    <strong className="font-mono text-purple-800 text-[9px]">timbre-v2.5</strong>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block text-[8px]">LLM Model:</span>
+                    <strong className="font-mono text-purple-800 text-[9px]">{gnaniModel}</strong>
+                  </div>
+                </div>
+
+                {/* API Key Input */}
+                <div>
+                  <label className="text-[10px] font-bold text-gray-600 block mb-0.5">
+                    Gnani API Key (X-API-Key-ID):
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showGnaniKey ? "text" : "password"}
+                      value={gnaniApiKey}
+                      onChange={(e) => {
+                        setGnaniApiKey(e.target.value);
+                        saveGnaniConfig({ apiKey: e.target.value });
+                      }}
+                      placeholder="Paste Gnani API key from app.gnani.ai"
+                      className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-600 rounded-lg pl-2 pr-7 py-1 text-[11px] font-mono focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGnaniKey(!showGnaniKey)}
+                      className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                    >
+                      {showGnaniKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Voice & LLM Model Selectors */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-600 block mb-0.5">Gnani Timbre Voice:</label>
+                    <select
+                      value={gnaniVoice}
+                      onChange={(e) => {
+                        setGnaniVoice(e.target.value);
+                        saveGnaniConfig({ voice: e.target.value });
+                      }}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-purple-600"
+                    >
+                      <option value="Nalini">Nalini (Natural Female)</option>
+                      <option value="Radhika">Radhika (Gentle Voice)</option>
+                      <option value="Kavya">Kavya (Indic Pro)</option>
+                      <option value="Aarav">Aarav (Warm Male)</option>
+                    </select>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-blue-50 p-2.5 rounded-xl border border-purple-200 shadow-2xs">
+                    <label className="text-[11px] font-bold text-gray-800 block mb-1">Model</label>
+                    <select
+                      value={gnaniModel}
+                      onChange={(e) => {
+                        setGnaniModel(e.target.value);
+                        saveGnaniConfig({ model: e.target.value });
+                      }}
+                      className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-gray-800 shadow-2xs focus:outline-none focus:border-purple-600 cursor-pointer"
+                    >
+                      <option value="Gnani Prisma V2.5">Gnani Prisma V2.5</option>
+                      <option value="Gnani Timbre V2.5">Gnani Timbre V2.5</option>
+                      <option value="Gnani Prisma + Timbre Suite">Gnani Prisma + Timbre Suite</option>
+                    </select>
+                    <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                      Transforms speech into accurate text across Indian languages
+                    </p>
+                  </div>
+                </div>
+
+                {/* Test Key Button */}
                 <button
-                  onClick={() => setEngineType("local-builtin")}
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold ${
-                    engineType === "local-builtin"
-                      ? "bg-[var(--color-badge-bg)] border-[var(--color-primary)] text-[var(--color-primary)]"
-                      : "bg-white border-gray-200 text-gray-600"
-                  }`}
+                  type="button"
+                  onClick={handleTestGnani}
+                  disabled={testStatus?.loading}
+                  className="w-full py-1.5 px-2 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-[10px] flex items-center justify-center gap-1 transition-colors cursor-pointer"
                 >
-                  Built-in Engine
+                  {testStatus?.loading ? (
+                    <span className="animate-spin text-xs">⏳</span>
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
+                  )}
+                  <span>Test Credentials</span>
                 </button>
-                <button
-                  onClick={() => setEngineType("ollama")}
-                  className={`flex-1 py-1.5 rounded-lg border text-xs font-semibold ${
-                    engineType === "ollama"
-                      ? "bg-[var(--color-badge-bg)] border-[var(--color-primary)] text-[var(--color-primary)]"
-                      : "bg-white border-gray-200 text-gray-600"
-                  }`}
-                >
-                  Local Ollama
-                </button>
+
+                {/* Capabilities Banner */}
+                <div className="p-1.5 rounded-lg bg-purple-50/80 text-purple-900 text-[9px] flex items-center gap-1">
+                  <Radio className="w-3 h-3 text-purple-600 shrink-0" />
+                  <span>Exclusively powered by <strong>Gnani.ai</strong> (Prisma STT, Timbre TTS & Indic LLM).</span>
+                </div>
+
+                {/* Test Feedback Notice */}
+                {testStatus && (
+                  <div className={`p-1.5 rounded-lg text-[10px] flex items-center gap-1 ${
+                    testStatus.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"
+                  }`}>
+                    {testStatus.success ? <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" /> : <AlertCircle className="w-3 h-3 text-rose-600 shrink-0" />}
+                    <span className="truncate">{testStatus.message}</span>
+                  </div>
+                )}
+
               </div>
-              {engineType === "ollama" && (
-                <input
-                  type="text"
-                  value={ollamaModel}
-                  onChange={(e) => setOllamaModel(e.target.value)}
-                  placeholder="qwen2.5:1.5b"
-                  className="w-full bg-white border border-gray-200 rounded-lg px-2.5 py-1 text-xs font-mono"
-                />
-              )}
             </div>
           )}
 
@@ -248,6 +491,7 @@ export default function FloatingChatbot() {
           <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-[var(--color-bg-soft)]">
             {messages.map((m) => {
               const isUser = m.sender === "user";
+              const isPlayingThis = playingMessageId === m.id;
               return (
                 <div
                   key={m.id}
@@ -264,33 +508,143 @@ export default function FloatingChatbot() {
                   >
                     <p className="whitespace-pre-line">{m.text}</p>
                     
-                    {!isUser && (
-                      <div className="mt-2 pt-1.5 border-t border-black/5 flex items-center justify-between text-[10px] text-gray-400">
-                        <span className="italic">{m.source || "Clinical Companion"}</span>
+                    {/* RAG Retrieved Medical Literature Evidence Drawer */}
+                    {!isUser && m.retrievedDocs && m.retrievedDocs.length > 0 && (
+                      <div className="mt-2.5 pt-2 border-t border-purple-100">
                         <button
-                          onClick={() => speakText(m.text, language)}
-                          className="hover:text-[var(--color-primary)] transition-colors flex items-center gap-1 font-semibold"
+                          type="button"
+                          onClick={() => toggleSourceExpansion(m.id)}
+                          className="w-full flex items-center justify-between text-[10px] font-semibold text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg border border-purple-200 transition-colors cursor-pointer"
                         >
-                          <Volume2 className="w-3 h-3" /> Speak
+                          <span className="flex items-center gap-1.5">
+                            <BookOpen className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span>RAG Sources ({m.retrievedDocs.length} Verified Guidelines)</span>
+                            <span className="bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded text-[9px] font-mono">
+                              {m.ragConfidence ? `${Math.round(m.ragConfidence * 100)}% match` : "Verified"}
+                            </span>
+                          </span>
+                          <span className="text-purple-600 font-bold">{expandedSources[m.id] ? "▲" : "▼"}</span>
+                        </button>
+
+                        {expandedSources[m.id] && (
+                          <div className="mt-2 space-y-1.5 animate-in fade-in">
+                            {m.retrievedDocs.map((doc, dIdx) => (
+                              <div key={dIdx} className="p-2 rounded-lg bg-white border border-purple-150 text-[10px] space-y-1 shadow-2xs">
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="font-bold text-purple-950 flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    {doc.organization}
+                                  </span>
+                                  <span className="text-[9px] font-mono px-1 rounded bg-purple-100 text-purple-800">
+                                    {doc.confidencePct ? `${doc.confidencePct}% match` : doc.year}
+                                  </span>
+                                </div>
+                                <p className="font-semibold text-gray-800 text-[10px] leading-tight">
+                                  {doc.title}
+                                </p>
+                                <p className="text-[9px] text-gray-500 italic">
+                                  {doc.citation}
+                                </p>
+                                {doc.keyTakeaways && doc.keyTakeaways.length > 0 && (
+                                  <div className="text-[9px] text-gray-600 pt-1 border-t border-gray-100">
+                                    <strong>Evidence Finding:</strong> {doc.keyTakeaways[0]}
+                                  </div>
+                                )}
+                                {doc.url && (
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[9px] text-purple-600 hover:text-purple-800 underline flex items-center gap-0.5 pt-0.5"
+                                  >
+                                    View Official Guideline ↗
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {!isUser && (
+                      <div className="mt-2 pt-1.5 border-t border-black/5 flex items-center justify-between text-[10px] text-gray-500">
+                        <span className="inline-flex items-center gap-1 font-medium text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 text-[9px]">
+                          <Zap className="w-2.5 h-2.5 text-purple-600 shrink-0" /> Gnani Prisma V2.5 • Proper Script
+                        </span>
+                        <button
+                          onClick={() => handlePlaySpeech(m.text, m.id)}
+                          className={`transition-colors flex items-center gap-1 font-semibold cursor-pointer ${
+                            isPlayingThis ? "text-rose-600 animate-pulse font-bold" : "hover:text-[var(--color-primary)] text-purple-700"
+                          }`}
+                          title="Listen with Gnani Timbre voice"
+                        >
+                          {isPlayingThis ? (
+                            <>
+                              <VolumeX className="w-3.5 h-3.5" /> Stop
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-3.5 h-3.5" /> Listen (Gnani Voice)
+                            </>
+                          )}
                         </button>
                       </div>
                     )}
                   </div>
-                  <span className="text-[9px] text-gray-400 mt-0.5 px-1 font-mono">
-                    {m.timestamp}
-                  </span>
+                  <div className="flex items-center gap-1 mt-0.5 px-1">
+                    <span className="text-[9px] text-gray-400 font-mono">
+                      {m.timestamp}
+                    </span>
+                    {m.isVoice && (
+                      <span className="text-[9px] text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.2 rounded-full flex items-center gap-0.5 font-medium">
+                        <Mic className="w-2.5 h-2.5 text-purple-600" /> Gnani Prisma
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}
 
             {isTyping && (
-              <div className="flex items-center gap-1.5 p-2.5 bg-white border border-gray-200 rounded-xl w-24 animate-pulse text-[11px] text-gray-500">
+              <div className="flex items-center gap-1.5 p-2.5 bg-white border border-gray-200 rounded-xl w-32 animate-pulse text-[11px] text-gray-500">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                <span>Sakhi typing...</span>
+                <span>Symvella thinking...</span>
               </div>
             )}
+            
+            {isTranscribing && (
+              <div className="flex items-center gap-1.5 p-2 bg-purple-50 border border-purple-200 rounded-xl w-44 animate-pulse text-[10px] text-purple-700 font-medium">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+                <span>Transcribing (Gnani STT)...</span>
+              </div>
+            )}
+
             <div ref={chatEndRef} />
           </div>
+
+          {/* Live Recording / Transcribing Indicator Banner */}
+          {isListening && (
+            <div className="px-3 py-1.5 bg-rose-50 border-t border-rose-200 flex items-center justify-between text-xs text-rose-700 animate-in fade-in">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+                <span className="font-semibold text-[10px]">Gnani Prisma STT: Speak now...</span>
+              </div>
+              <button 
+                onClick={toggleSpeechRecognition}
+                className="px-2 py-0.5 rounded-md bg-rose-600 text-white font-bold text-[10px] hover:bg-rose-700 cursor-pointer shadow-xs"
+              >
+                Stop & Transcribe ⏹️
+              </button>
+            </div>
+          )}
+
+          {isTranscribing && (
+            <div className="px-3 py-1.5 bg-purple-50 border-t border-purple-200 flex items-center gap-1.5 text-xs text-purple-700">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
+              <span className="text-[10px] font-medium">Gnani Prisma converting speech to text...</span>
+            </div>
+          )}
 
           {/* Quick Suggestions */}
           <div className="px-3 py-1.5 bg-white border-t border-gray-100 overflow-x-auto flex gap-1.5 no-scrollbar">
@@ -309,14 +663,23 @@ export default function FloatingChatbot() {
           <div className="p-2.5 bg-white border-t border-[var(--color-border)] flex items-center gap-2">
             <button
               onClick={toggleSpeechRecognition}
+              disabled={isTranscribing}
               className={`p-2.5 rounded-xl transition-all ${
                 isListening
-                  ? "bg-rose-600 text-white animate-pulse"
+                  ? "bg-rose-600 text-white animate-pulse shadow-md"
+                  : isTranscribing
+                  ? "bg-purple-100 text-purple-600"
                   : "bg-pink-50 hover:bg-pink-100 text-[var(--color-primary)]"
               }`}
-              title="Speak in your language"
+              title={isListening ? "Listening... Tap to send voice" : "Tap to speak with Gnani Prisma STT"}
             >
-              {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              {isListening ? (
+                <MicOff className="w-4 h-4" />
+              ) : isTranscribing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
             </button>
 
             <input
@@ -324,14 +687,22 @@ export default function FloatingChatbot() {
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
-              placeholder={language === "hi" ? "लक्षण या सवाल पूछें..." : "Ask Sakhi in English or Hindi..."}
+              placeholder={
+                isListening 
+                  ? "Listening to your voice... Tap mic to stop" 
+                  : isTranscribing
+                  ? "Gnani Prisma is transcribing..."
+                  : language === "hi" 
+                  ? "लक्षण या सवाल पूछें..." 
+                  : "Ask Symvella anything about cycles or health..."
+              }
               className="flex-1 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"
             />
 
             <button
               onClick={() => handleSend()}
-              disabled={!inputVal.trim()}
-              className="p-2.5 rounded-xl bg-[var(--color-primary)] text-white disabled:opacity-40 hover:opacity-90 transition-transform active:scale-95"
+              disabled={!inputVal.trim() || isTranscribing}
+              className="p-2.5 rounded-xl bg-[var(--color-primary)] text-white disabled:opacity-40 hover:opacity-90 transition-transform active:scale-95 cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -340,7 +711,7 @@ export default function FloatingChatbot() {
           {/* Disclaimer */}
           <div className="bg-gray-50 px-3 py-1 text-[9px] text-gray-400 text-center border-t border-gray-100 flex items-center justify-center gap-1">
             <ShieldCheck className="w-3 h-3 text-emerald-600" />
-            <span>SakhiAI guides & informs; does not prescribe. Emergency: 112.</span>
+            <span>Symvella guides & informs; does not prescribe. Emergency: 112.</span>
           </div>
 
         </div>
@@ -349,14 +720,14 @@ export default function FloatingChatbot() {
       {/* Floating Action Button (Small Logo) at Bottom-Right */}
       <button
         onClick={() => setIsChatOpen(prev => !prev)}
-        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white ring-4 ring-[var(--color-badge-bg)] relative group"
-        title="Chat with SakhiAI (Multilingual Voice Companion)"
+        className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-dark)] text-white shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 border-2 border-white ring-4 ring-[var(--color-badge-bg)] relative group overflow-hidden"
+        title="Chat with Symvella (Multilingual Voice Companion)"
       >
         {isChatOpen ? (
           <X className="w-6 h-6" />
         ) : (
           <>
-            <span className="text-2xl animate-bounce">🌸</span>
+            <img src="/logo.png" alt="Symvella" className="w-10 h-10 rounded-xl object-cover bg-white" />
             <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
           </>
         )}

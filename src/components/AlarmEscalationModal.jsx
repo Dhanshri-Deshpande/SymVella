@@ -76,7 +76,7 @@ export default function AlarmEscalationModal({ isOpen, onClose }) {
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-900">Smart Alarm Escalation Flow</h3>
-              <p className="text-xs text-gray-500">How SakhiAI keeps symptom data continuous without annoyance</p>
+              <p className="text-xs text-gray-500">How Symvella keeps symptom data continuous without annoyance</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 text-gray-400">

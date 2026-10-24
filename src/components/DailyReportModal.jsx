@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { 
   Sparkles, 
@@ -10,17 +10,23 @@ import {
   BrainCircuit,
   Clock,
   CheckCircle2,
-  Activity
+  Activity,
+  ChevronDown,
+  ChevronUp,
+  TrendingUp,
+  ShieldCheck,
+  Stethoscope
 } from "lucide-react";
 
 export default function DailyReportModal({ reportData, isOpen, onClose }) {
   const { speakText, language, setIsSOSOpen } = useApp();
+  const [showBiomarkerDetails, setShowBiomarkerDetails] = useState(false);
 
   if (!isOpen || !reportData) return null;
 
   const { date, reasons, upayList, isRedFlag, mlMetrics } = reportData;
 
-  const audioSummary = reasons.join(". ") + ". ML model recommended home remedies: " + 
+  const audioSummary = reasons.join(". ") + ". Recommended therapeutic home care: " + 
     upayList.map(u => `${u.title}: ${u.desc}`).join(". ");
 
   return (
@@ -30,19 +36,21 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
         {/* Header */}
         <div className="flex items-start justify-between pb-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[var(--color-badge-bg)] text-[var(--color-primary)] flex items-center justify-center shadow-xs">
-              <Sparkles className="w-6 h-6" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Symvella" 
+              className="w-12 h-12 rounded-2xl object-cover bg-white shadow-xs border border-purple-100" 
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-[var(--color-primary)] uppercase tracking-wide flex items-center gap-1">
-                  <BrainCircuit className="w-3 h-3" />
-                  ML Daily Clinical Report
+                  <ShieldCheck className="w-3 h-3 text-[var(--color-primary)]" />
+                  Symvella Clinical Summary
                 </span>
                 <span className="text-xs text-gray-400 font-mono">{date}</span>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-0.5">
-                Today's Health Insight & Gharelu Upay 🌸
+                {language === "hi" ? "दैनिक स्वास्थ्य रिपोर्ट व उपचार परामर्श 🌸" : "Daily Health Findings & Care Guidance 🌸"}
               </h3>
             </div>
           </div>
@@ -54,39 +62,39 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Emergency Alert if Heavy Bleeding or Red Flag */}
+        {/* Emergency Alert if Critical Symptoms Noted */}
         {isRedFlag && (
           <div className="my-4 p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-xs text-rose-950 space-y-2">
             <div className="flex items-center gap-2 font-bold text-rose-800">
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
-              <span>Urgent Medical Attention Notice:</span>
+              <span>Urgent Medical Consultation Notice:</span>
             </div>
             <p>
-              Your logged symptoms indicate unusually severe bleeding (soaking multiple pads per hour) or critical pain VAS. Please contact your physician or visit the nearest clinic.
+              Reported symptoms indicate severe bleeding volume (soaking multiple pads per hour) or elevated pain intensity. Prompt clinical evaluation by a healthcare provider is strongly advised.
             </p>
             <button
               onClick={() => {
                 onClose();
                 setIsSOSOpen(true);
               }}
-              className="px-3 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors"
+              className="px-3.5 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 transition-colors shadow-xs"
             >
               Open Emergency SOS
             </button>
           </div>
         )}
 
-        {/* 1. Underlying Reasons Section (Why this happens - Explainable AI) */}
+        {/* 1. Clinical Findings & Physiological Indicators */}
         <div className="my-4 p-4 rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] space-y-2.5">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
-              {language === "hi" ? "ML मॉडल विश्लेषण व कारण" : "Unified ML Analysis & Root Drivers"}
+              <Activity className="w-4 h-4 text-[var(--color-primary)]" />
+              {language === "hi" ? "नैदानिक निष्कर्ष व शारीरिक संकेतक" : "Clinical Findings & Physiological Indicators"}
             </h4>
             <button
               onClick={() => speakText(audioSummary, language)}
               className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-[var(--color-primary)] text-xs font-medium flex items-center gap-1 shadow-2xs hover:bg-gray-50 transition-colors"
-              title="Listen to audio explainer"
+              title="Listen to clinical summary"
             >
               <Volume2 className="w-3.5 h-3.5 text-[var(--color-primary)]" />
               <span>Listen</span>
@@ -102,16 +110,89 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
           </ul>
         </div>
 
-        {/* 2. Gharelu Upay Section (Predicted strictly by ML Model) */}
+        {/* 2. Contributing Biomarkers & Risk Stratification */}
+        <div className="my-4 p-4 rounded-2xl bg-white border border-gray-200 shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[var(--color-primary)]" />
+              <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
+                Contributing Biomarkers & Clinical Severity
+              </span>
+            </div>
+            <button
+              onClick={() => setShowBiomarkerDetails(!showBiomarkerDetails)}
+              className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
+            >
+              <span>{showBiomarkerDetails ? "Hide Details" : "View Biomarker Impact"}</span>
+              {showBiomarkerDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Clinical Severity Gauges */}
+          <div className="grid grid-cols-3 gap-2 text-center text-xs">
+            <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100">
+              <span className="text-[10px] text-gray-500 block font-medium">Pelvic Discomfort</span>
+              <span className="font-bold text-[var(--color-primary)] font-mono text-sm">{mlMetrics?.dysmenorrheaScore || 0}%</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
+              <span className="text-[10px] text-gray-500 block font-medium">Ferritin Depletion</span>
+              <span className="font-bold text-rose-700 font-mono text-sm">{mlMetrics?.anemiaScore || 0}%</span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
+              <span className="text-[10px] text-gray-500 block font-medium">Clinical Triage</span>
+              <span className="font-bold text-emerald-700 font-mono text-sm">{mlMetrics?.triageScore || 0}%</span>
+            </div>
+          </div>
+
+          {/* Collapsible Biomarker Factor Breakdown */}
+          {showBiomarkerDetails && mlMetrics?.shapFactors && (
+            <div className="space-y-2 pt-2 border-t border-gray-100 animate-in fade-in">
+              <span className="text-[11px] text-gray-500 font-medium block">
+                Relative physiological impact of today's reported parameters:
+              </span>
+              {mlMetrics.shapFactors.map((sf, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="font-semibold text-gray-800">{sf.feature}</span>
+                    <span className="font-mono text-[var(--color-primary)] font-bold">+{sf.weight}% clinical weight</span>
+                  </div>
+                  <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="bg-[var(--color-primary)] h-1.5 rounded-full" 
+                      style={{ width: `${Math.min(100, sf.weight * 2)}%` }} 
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Preventive Clinical Guidance */}
+          {mlMetrics?.counterfactual && (
+            <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-950 flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-[11px] uppercase tracking-wide block text-amber-900">
+                  Preventive Clinical Guidance:
+                </span>
+                <p className="mt-0.5 text-xs text-amber-900 leading-relaxed font-medium">
+                  {mlMetrics.counterfactual}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 3. Evidence-Based Home Remedies & Holistic Care */}
         <div className="space-y-3 my-4">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
               <Leaf className="w-4 h-4 text-emerald-600" />
-              {language === "hi" ? "ML द्वारा अनुशंसित प्रमाणित घरेलू उपाय" : "ML-Predicted Gharelu Upay & Holistic Care"}
+              {language === "hi" ? "प्रमाणित घरेलू देखभाल व समग्र उपचार" : "Targeted Home Care & Holistic Regimens"}
             </h4>
-            <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full">
-              <Activity className="w-3 h-3 text-[var(--color-primary)]" />
-              Tree-SHAP Ranked
+            <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1 bg-gray-100 px-2.5 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+              Clinically Stratified
             </span>
           </div>
 
@@ -131,8 +212,8 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
                     </span>
                   </div>
                   <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1 shrink-0">
-                    <BrainCircuit className="w-3 h-3 text-emerald-600" />
-                    {upay.matchScore}% ML Match
+                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                    {upay.matchScore}% Clinical Concordance
                   </span>
                 </div>
 
@@ -140,7 +221,7 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
                   {upay.desc}
                 </p>
 
-                {/* Preparation & Dosage details */}
+                {/* Preparation & Administration Timing */}
                 {upay.preparation && (
                   <div className="flex items-center gap-1.5 text-[11px] text-gray-500 bg-gray-50 px-2.5 py-1 rounded-xl border border-gray-100">
                     <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />
@@ -148,14 +229,11 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
                   </div>
                 )}
 
-                {/* Explainable AI attribution pill */}
+                {/* Clinical Indication Footnote */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-gray-100">
                   <span className="text-[10px] bg-purple-50 text-[var(--color-primary)] px-2 py-0.5 rounded-md border border-purple-200 font-medium flex items-center gap-1">
                     <span>🎯</span>
                     <span>{upay.shapExplanation}</span>
-                    {upay.accuracy && (
-                      <span className="text-gray-400">({upay.accuracy}% model acc)</span>
-                    )}
                   </span>
                   <span className="text-[10px] text-gray-400 italic">
                     {upay.category}
@@ -170,13 +248,13 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
         <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
           <div className="text-[11px] text-gray-400 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Saved to your daily health history.</span>
+            <span>Recorded to your private longitudinal medical history.</span>
           </div>
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-2xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs shadow-md transition-all active:scale-95"
           >
-            Got it, Thank you ✨
+            Acknowledge & Close
           </button>
         </div>
 

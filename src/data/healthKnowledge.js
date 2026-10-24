@@ -1,4 +1,4 @@
-// Verified medical knowledge, books, government schemes, and guidelines for SakhiAI
+// Verified medical knowledge, books, government schemes, and guidelines for Symvella
 
 export const EMERGENCY_RED_FLAGS = [
   {
@@ -371,7 +371,7 @@ While mild cramping during menstruation is common, severe pain that leaves you i
 3. **Chronic pelvic pain & fatigue**: Ongoing dull ache in the pelvis even between periods.
 
 ### Why Early Logging Matters:
-Because symptoms are often dismissed as 'normal cramps', global diagnosis takes an average of 7 to 9 years. By recording your pain severity score (0-10) and relation to cycle days inside SakhiAI, you provide doctors with clear, undeniable longitudinal proof.
+Because symptoms are often dismissed as 'normal cramps', global diagnosis takes an average of 7 to 9 years. By recording your pain severity score (0-10) and relation to cycle days inside Symvella, you provide doctors with clear, undeniable longitudinal proof.
     `,
     tags: ["Endometriosis", "Pain Management", "Doctor Discussion"]
   },

@@ -1,4 +1,4 @@
-// Realistic 30-day historical data for SakhiAI prototype demonstrations
+// Realistic 30-day historical data for Symvella prototype demonstrations
 
 export const INITIAL_USER_PROFILE = {
   name: "Pooja Sharma",

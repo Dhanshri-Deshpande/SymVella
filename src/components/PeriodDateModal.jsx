@@ -157,7 +157,7 @@ export default function PeriodDateModal() {
           {/* Informational Hint */}
           <div className="p-3 bg-purple-50 rounded-2xl border border-[var(--color-border)] text-[11px] text-[var(--color-primary-dark)] flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-            <span>SakhiAI will automatically recalculate cycle length, regularity status, and update your home timeline graph.</span>
+            <span>Symvella will automatically recalculate cycle length, regularity status, and update your home timeline graph.</span>
           </div>
 
           {/* Form Actions */}

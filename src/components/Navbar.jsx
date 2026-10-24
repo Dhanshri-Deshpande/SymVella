@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
-import { SAKHI_LANGUAGES } from "../data/botKnowledge";
+import { SYMVELLA_LANGUAGES } from "../data/botKnowledge";
 import { 
   Heart, 
-  Lock, 
   Bell, 
   ShieldAlert, 
   Globe,
@@ -15,7 +14,6 @@ export default function Navbar() {
   const { 
     language, 
     setLanguage, 
-    setIsDiscreetMode, 
     setIsSOSOpen,
     setActiveTab,
     activeTab
@@ -33,20 +31,22 @@ export default function Navbar() {
             onClick={() => setActiveTab("home")}
             className="flex items-center gap-3 text-left group"
           >
-            <div className="w-10 h-10 rounded-2xl bg-[var(--color-primary)] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-              <Heart className="w-6 h-6 fill-white" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Symvella" 
+              className="w-10 h-10 rounded-2xl object-cover shadow-md group-hover:scale-105 transition-transform border border-purple-100 bg-white" 
+            />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black tracking-tight text-[var(--color-primary-dark)]">
-                  Sakhi<span className="text-[var(--color-primary)]">AI</span>
+                  Sym<span className="text-[var(--color-primary)]">vella</span>
                 </h1>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary)] uppercase tracking-wide">
                   Women's Health
                 </span>
               </div>
               <p className="text-[11px] text-[var(--color-text-muted)] hidden sm:block">
-                Multilingual AI Companion & Symptom Tracker
+                Multilingual Clinical Companion & Cycle Intelligence
               </p>
             </div>
           </button>
@@ -62,7 +62,7 @@ export default function Navbar() {
                 onChange={(e) => setLanguage(e.target.value)}
                 className="bg-transparent font-medium focus:outline-none cursor-pointer text-[var(--color-primary-dark)]"
               >
-                {SAKHI_LANGUAGES.map((l) => (
+                {SYMVELLA_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>{l.native}</option>
                 ))}
               </select>
@@ -72,20 +72,10 @@ export default function Navbar() {
             <button
               onClick={() => setIsAlarmModalOpen(true)}
               className="p-1.5 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Daily Alarm & Smart Reminders"
+              title="Daily Alarm & Clinical Reminders"
             >
               <Bell className="w-4 h-4 text-purple-600" />
               <span className="hidden sm:inline">Alarms</span>
-            </button>
-
-            {/* Discreet Stealth Mode */}
-            <button
-              onClick={() => setIsDiscreetMode(true)}
-              className="p-1.5 px-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Stealth Mode (Calculator disguise)"
-            >
-              <Lock className="w-4 h-4 text-slate-600" />
-              <span className="hidden sm:inline">Discreet</span>
             </button>
 
             {/* Settings & Profile Button */}
@@ -96,7 +86,7 @@ export default function Navbar() {
                   ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-xs"
                   : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
               }`}
-              title="Profile & Settings"
+              title="Settings"
             >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>

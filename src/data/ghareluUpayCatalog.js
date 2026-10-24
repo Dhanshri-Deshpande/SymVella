@@ -1,4 +1,4 @@
-// SakhiAI Clinical Gharelu Upay (Ayurvedic & Evidence-Based Home Remedies) Knowledge Base
+// Symvella Clinical Gharelu Upay (Ayurvedic & Evidence-Based Home Remedies) Knowledge Base
 // Grounded in integrative women's health clinical literature, Ayush guidelines, and ICMR protocols.
 
 export const GHARELU_UPAY_CATALOG = {
@@ -167,6 +167,90 @@ export const GHARELU_UPAY_CATALOG = {
       desc: "रात भर 1 चम्मच साबुत धनिया और 1 चम्मच सौंफ 1 गिलास पानी में भिगोएं। सुबह छानकर पिएं। जब लक्षण सामान्य हों, तो यह शरीर के तापमान और हार्मोनल संतुलन को बनाए रखता है।",
       preparation: "रात भर का अर्क • सुबह पिएं",
       rationale: "धनिया और सौंफ का पानी शरीर की कोशिकाओं में इलेक्ट्रोलाइट्स का संतुलन बनाकर प्राकृतिक ऊर्जा देता है।"
+    }
+  },
+
+  ginger_lemon_nausea: {
+    key: "ginger_lemon_nausea",
+    metricLabel: "Ginger & Lemon",
+    en: {
+      title: "Fresh Ginger-Lemon Warm Infusion (Obstetric Nausea Relief)",
+      category: "Gastric Motility & Morning Sickness",
+      tag: "Pregnancy Safe",
+      desc: "Steep 1 inch crushed ginger root in warm water with a splash of fresh lemon. Gingerols gently calm gastric smooth muscle contractions and antagonize central 5-HT3 receptors to safely soothe pregnancy morning sickness.",
+      preparation: "Mild warm steep • Sip slowly when nausea arises",
+      rationale: "Clinical trials confirm gingerols safely reduce hyperemesis symptoms without adverse maternal or fetal outcomes."
+    },
+    hi: {
+      title: "अदरक और नींबू का गुनगुना अर्क (गर्भावस्था मतली निवारक)",
+      category: "गर्भावस्था पाचन / मतली शामक",
+      tag: "गर्भावस्था में सुरक्षित",
+      desc: "ताजा घिसा हुआ 1 इंच अदरक हल्के गर्म पानी में 5 मिनट छोड़ें और थोड़ा नींबू निचोड़ें। घूंट-घूंट करके पिएं। यह गर्भावस्था के दौरान उल्टी और जी मिचलाने (Morning Sickness) को बिना किसी साइड इफेक्ट के तुरंत शांत करता है।",
+      preparation: "ताजा हल्का अर्क • सुबह उठते ही धीरे-धीरे पिएं",
+      rationale: "अदरक पेट की नसों में अत्यधिक संकुचन को रोककर मतली के केंद्र को प्राकृतिक रूप से शांत करता है।"
+    }
+  },
+
+  coconut_water_edema: {
+    key: "coconut_water_edema",
+    metricLabel: "Coconut Water & Makhana",
+    en: {
+      title: "Tender Coconut Water & Roasted Makhana (Electrolyte & Edema Balancer)",
+      category: "Maternal Osmotic & Mineral Balance",
+      tag: "Hydration & Edema",
+      desc: "Drink 1 glass of fresh tender coconut water alongside a bowl of dry roasted foxnuts (makhana). High bioavailable potassium offsets fluid retention to relieve pregnancy foot and ankle swelling while makhana supplies elemental calcium.",
+      preparation: "Mid-day hydration • 1 tender coconut + 1 small bowl makhana",
+      rationale: "Natural potassium-to-sodium ratio facilitates renal water excretion and eases lower extremity venous pooling."
+    },
+    hi: {
+      title: "ताजा नारियल पानी और भुने मखाने (सूजन निवारक)",
+      category: "इलेक्ट्रोलाइट संतुलन / पैरों की सूजन",
+      tag: "सूजन व ऐंठन आराम",
+      desc: "दोपहर से पहले 1 गिलास ताजा नारियल पानी पिएं और साथ में भुने मखाने खाएं। नारियल पानी का प्राकृतिक पोटैशियम शरीर में रुके अतिरिक्त तरल को बाहर निकालता है जिससे पैरों और टखनों की सूजन कम होती है।",
+      preparation: "दोपहर पूर्व सेवन • 1 ताजा नारियल + मखाना",
+      rationale: "पोटैशियम और मैग्नीशियम मांसपेशियों की जकड़न दूर करते हैं और रक्तसंचार को सुचारू रखते हैं।"
+    }
+  },
+
+  fenugreek_fennel_lactation: {
+    key: "fenugreek_fennel_lactation",
+    metricLabel: "Fenugreek & Fennel",
+    en: {
+      title: "Fenugreek & Fennel Warm Decoction (Postpartum Galactagogue)",
+      category: "Postpartum Lactation & Uterine Involution",
+      tag: "Lactation Support",
+      desc: "Simmer 1 tsp fenugreek seeds (methi) and 1 tsp fennel seeds (saunf) in 250ml warm water for 5 minutes. Phytoestrogens and diosgenin stimulate prolactin production for healthy breast milk flow while supporting uterine recovery.",
+      preparation: "Warm decoction • Twice daily after meals",
+      rationale: "Diosgenin stimulates mammary glandular alveolar development and endogenous prolactin secretion."
+    },
+    hi: {
+      title: "मेथी-सौंफ का गुनगुना काढ़ा (स्तनपान वर्धक)",
+      category: "प्रसवोत्तर स्वास्थ्य / दूध वृद्धि",
+      tag: "स्तनपान वर्धक",
+      desc: "1 चम्मच मेथी दाना और 1 चम्मच सौंफ 1 गिलास पानी में 5 मिनट उबालें। गुनगुना पिएं। यह प्रसव के बाद नई माताओं में प्राकृतिक रूप से दूध की मात्रा (Lactation) को बढ़ाता है और गर्भाशय को तेजी से सामान्य आकार में लाता है।",
+      preparation: "5 मिनट उबालें • दिन में दो बार लें",
+      rationale: "मेथी और सौंफ प्रोलैक्टिन हार्मोन को सक्रिय कर स्तनपान कराने वाली माताओं के पोषण को सहारा देते हैं।"
+    }
+  },
+
+  cool_mint_chandan: {
+    key: "cool_mint_chandan",
+    metricLabel: "Cooling Mint & Coriander",
+    en: {
+      title: "Coriander & Fresh Mint Cooling Infusion (Vasomotor Stabilizer)",
+      category: "Perimenopause Vasomotor Temperature Regulation",
+      tag: "Hot Flash Relief",
+      desc: "Steep crushed coriander seeds and fresh mint leaves in earthen pot water for 2 hours. Cools neurovascular flush sensations, relieves night sweats, and moderates hypothalamic thermal volatility during perimenopause.",
+      preparation: "Earthen pot cold steep • Drink during hot flash onset",
+      rationale: "Menthol activates peripheral TRPM8 cold receptors to blunt sudden hypothalamic vasomotor discharge."
+    },
+    hi: {
+      title: "धनिया-पुदीना शीतल पेय (हॉट फ्लैशेस शामक)",
+      category: "मेनोपॉज संतुलन / शरीर की गर्मी",
+      tag: "हॉट फ्लैश में शीतलता",
+      desc: "मटके के पानी में 1 चम्मच धनिया और ताजा पुदीना 2 घंटे भिगोकर रखें। अचानक अत्यधिक गर्मी लगने (Hot Flashes) या रात में पसीना आने पर पिएं। यह शरीर के आंतरिक तापमान को नियंत्रित कर तुरंत शीतलता प्रदान करता है।",
+      preparation: "मटके का शीतल अर्क • आवश्यकतानुसार पिएं",
+      rationale: "पुदीने और धनिए के शीतल गुण हाइपोथैलेमस की गर्मी की संवेदनशीलता को शांत करते हैं।"
     }
   }
 };

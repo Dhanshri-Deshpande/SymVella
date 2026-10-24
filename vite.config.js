@@ -8,4 +8,20 @@ export default defineConfig({
     tailwindcss(),
     react()
   ],
+  server: {
+    proxy: {
+      '/gnani-api': {
+        target: 'https://api.vachana.ai',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/gnani-api/, '')
+      },
+      '/gnani-platform': {
+        target: 'https://api.inya.ai',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/gnani-platform/, '')
+      }
+    }
+  }
 })
