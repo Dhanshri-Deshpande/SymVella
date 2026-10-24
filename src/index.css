@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+:root {
+  /* Blossom Rows (Fixed Single Theme) */
+  --color-primary: #965293;
+  --color-primary-dark: #3B2E58;
+  --color-secondary: #EE9FE1;
+  --color-accent: #748DE3;
+  --color-bg-soft: #FAF7FD;
+  --color-surface: #FFFFFF;
+  --color-border: #EBDFF3;
+  --color-text-main: #241836;
+  --color-text-muted: #69577D;
+  --color-badge-bg: #F5EAF9;
+  --color-highlight: #748DE3;
+}
+
+[data-theme="blossom-rows"] {
+  --color-primary: #965293;
+  --color-primary-dark: #3B2E58;
+  --color-secondary: #EE9FE1;
+  --color-accent: #748DE3;
+  --color-bg-soft: #FAF7FD;
+  --color-surface: #FFFFFF;
+  --color-border: #EBDFF3;
+  --color-text-main: #241836;
+  --color-text-muted: #69577D;
+  --color-badge-bg: #F5EAF9;
+  --color-highlight: #748DE3;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-bg-soft);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 82, 147, 0.25);
+  border-radius: 9999px;
+}
+
+/* Pulse animation for SOS and Alarms */
+@keyframes softPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+.animate-soft-pulse {
+  animation: softPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Print Styles for Doctor Clinical Report */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #doctor-report-printable, #doctor-report-printable * {
+    visibility: visible;
+  }
+  #doctor-report-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
