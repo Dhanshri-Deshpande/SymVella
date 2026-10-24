@@ -107,6 +107,13 @@ export function AppProvider({ children }) {
     document.documentElement.setAttribute("data-theme", "blossom-rows");
   }, []);
 
+  // Sync daily report language whenever user toggles between English & Hindi
+  useEffect(() => {
+    if (symptomLogs.length > 0) {
+      setDailyReportData(generateDailyReport(symptomLogs[symptomLogs.length - 1], language, userProfile, periodHistory));
+    }
+  }, [language]);
+
   // Add a new period date entry from user input
   const addPeriodEntry = ({ startDate, endDate, flow, painLevel, notes }) => {
     const start = new Date(startDate);
@@ -157,7 +164,7 @@ export function AppProvider({ children }) {
     };
     setSymptomLogs(prev => [...prev, formatted]);
 
-    const generated = generateDailyReport(formatted, language);
+    const generated = generateDailyReport(formatted, language, userProfile, periodHistory);
     setDailyReportData(generated);
     setIsDailyReportOpen(true);
   };

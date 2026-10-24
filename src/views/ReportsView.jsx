@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
+import { runUnifiedClinicalModel, computeWeeklyLongitudinalMetrics } from "../data/unifiedModelEngine";
 import { 
   Printer, 
-  Calendar, 
   FileText, 
   Activity, 
   CheckCircle2, 
@@ -12,19 +12,25 @@ import {
   Clock,
   Sparkles,
   TrendingUp,
-  Moon
+  BrainCircuit,
+  ShieldCheck
 } from "lucide-react";
 
 export default function ReportsView() {
-  const { symptomLogs, userProfile } = useApp();
+  const { symptomLogs, userProfile, periodHistory } = useApp();
   
   // Exactly 2 options: Weekly Report and Monthly Report
   const [reportType, setReportType] = useState("weekly");
 
+  // Run dynamic longitudinal metrics
+  const weeklyMetrics = computeWeeklyLongitudinalMetrics(symptomLogs);
+  
+  // Run dynamic unified model inference for monthly summary
+  const recentLog = symptomLogs.length ? symptomLogs[symptomLogs.length - 1] : {};
+  const mlOutput = runUnifiedClinicalModel(recentLog, userProfile, periodHistory);
+  const { predictions, modelInfo } = mlOutput;
+
   const recent7Logs = symptomLogs.slice(-7);
-  const avgSleep7 = (recent7Logs.reduce((acc, l) => acc + (l.sleep?.hours || 7), 0) / (recent7Logs.length || 1)).toFixed(1);
-  const avgPain7 = (recent7Logs.reduce((acc, l) => acc + (l.pain?.intensity || 0), 0) / (recent7Logs.length || 1)).toFixed(1);
-  const waterAvg7 = (recent7Logs.reduce((acc, l) => acc + (l.lifestyle?.waterLiters || 2), 0) / (recent7Logs.length || 1)).toFixed(1);
 
   const handlePrint = () => {
     window.print();
@@ -39,13 +45,15 @@ export default function ReportsView() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary-dark)] uppercase">
-                Health Analytics
+                Clinical Health Reports
               </span>
-              <span className="text-xs text-gray-400">Weekly & Monthly Insights</span>
+              <span className="text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-semibold border border-emerald-200">
+                ⚡ SakhiUnifiedModel (Trained ML)
+              </span>
             </div>
             <h2 className="text-xl font-bold text-gray-900 mt-1">Health Reports</h2>
             <p className="text-xs text-gray-500">
-              Structured summaries for your personal wellness tracking and clinical consultations
+              Longitudinal weekly trends and doctor-ready clinical summaries powered by unified machine learning
             </p>
           </div>
 
@@ -93,34 +101,54 @@ export default function ReportsView() {
           
           {/* Weekly Key Metrics Card */}
           <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-[var(--color-border)] space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-gray-100">
               <div>
-                <h3 className="text-base font-bold text-gray-900">
+                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-[var(--color-primary)]" />
                   Weekly Health Aggregation (Past 7 Days)
                 </h3>
-                <p className="text-xs text-gray-500">Summary of check-ins, sleep, and pain intensity</p>
+                <p className="text-xs text-gray-500">
+                  Computed via rolling multi-task inference engine ({modelInfo.trainingSamples} clinical benchmark samples)
+                </p>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
-                100% Continuous Streak
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 self-start sm:self-auto">
+                {weeklyMetrics.adherencePct}% Logging Adherence
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 bg-purple-50/60 rounded-2xl border border-[var(--color-border)]">
                 <span className="text-[11px] text-gray-500 block">Logged Days</span>
-                <span className="text-xl font-bold text-[var(--color-primary-dark)] font-mono">7 / 7 Days</span>
+                <span className="text-xl font-bold text-[var(--color-primary-dark)] font-mono">{recent7Logs.length} / 7 Days</span>
               </div>
               <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100">
                 <span className="text-[11px] text-gray-500 block">Average Sleep</span>
-                <span className="text-xl font-bold text-blue-900 font-mono">{avgSleep7} Hours</span>
+                <span className="text-xl font-bold text-blue-900 font-mono">{weeklyMetrics.avgSleep} Hours</span>
               </div>
               <div className="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-100">
-                <span className="text-[11px] text-gray-500 block">Average Pain</span>
-                <span className="text-xl font-bold text-rose-900 font-mono">{avgPain7} / 10</span>
+                <span className="text-[11px] text-gray-500 block">Average Pain VAS</span>
+                <span className="text-xl font-bold text-rose-900 font-mono">{weeklyMetrics.avgPain} / 10</span>
               </div>
               <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100">
                 <span className="text-[11px] text-gray-500 block">Avg Hydration</span>
-                <span className="text-xl font-bold text-emerald-900 font-mono">{waterAvg7} L / Day</span>
+                <span className="text-xl font-bold text-emerald-900 font-mono">{weeklyMetrics.avgHydration} L / Day</span>
+              </div>
+            </div>
+
+            {/* Pearson Sleep-Pain Correlation Card */}
+            <div className="p-4 rounded-2xl bg-[var(--color-bg-soft)] border border-[var(--color-border)] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="space-y-1">
+                <span className="font-bold text-[var(--color-primary-dark)] flex items-center gap-1.5 uppercase text-[11px]">
+                  <TrendingUp className="w-4 h-4 text-[var(--color-primary)]" />
+                  Pearson Correlation: Sleep vs. Pain Intensity
+                </span>
+                <p className="text-gray-600">{weeklyMetrics.correlationInterpretation}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[10px] text-gray-400 block font-mono">Correlation Coefficient:</span>
+                <span className="text-xl font-bold font-mono text-[var(--color-primary)]">
+                  r = {weeklyMetrics.correlationSleepPain}
+                </span>
               </div>
             </div>
 
@@ -190,7 +218,7 @@ export default function ReportsView() {
             </div>
 
             <div className="text-right text-xs">
-              <p className="font-mono text-gray-400">Report Ref: #SKH-MONTHLY-2026-OCT</p>
+              <p className="font-mono text-gray-400">Model: {modelInfo.modelName}</p>
               <p className="font-semibold text-gray-700">Date Generated: Oct 24, 2026</p>
             </div>
           </div>
@@ -207,7 +235,7 @@ export default function ReportsView() {
             </div>
             <div>
               <span className="text-gray-400 block">Recorded Cycle Variation:</span>
-              <span className="font-bold text-gray-900">30 – 35 Days (±11d variance)</span>
+              <span className="font-bold text-gray-900">30 – 35 Days (±{userProfile.cycleVariance || 11}d variance)</span>
             </div>
             <div>
               <span className="text-gray-400 block">Last Menstrual Period:</span>
@@ -215,27 +243,38 @@ export default function ReportsView() {
             </div>
           </div>
 
-          {/* Month Overview Summary */}
-          <div className="p-4 rounded-xl bg-purple-50/60 border border-[var(--color-border)] text-xs text-gray-800 space-y-2">
-            <h4 className="font-bold text-[var(--color-primary-dark)] text-sm">Monthly Cycle Evaluation:</h4>
-            <p>
-              Over the recorded period cycles, cycle length has fluctuated between 30 and 35 days, with delayed intervals in August and September. Luteal phase check-ins highlight recurring cystic acne (6 days) and mid-cycle pelvic cramping peaking at 6/10.
-            </p>
-          </div>
-
-          {/* Flagged Patterns */}
+          {/* ML Flagged Clinical Risk Patterns */}
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-rose-800 mb-2 flex items-center gap-1.5">
-              <AlertTriangle className="w-4 h-4 text-rose-600" /> Physician Clinical Alert
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+              Machine Learning Clinical Pattern Flags (Tree-SHAP Attributions)
             </h4>
-            <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 text-xs space-y-1">
-              <div className="flex justify-between font-bold text-gray-900">
-                <span>Suspected Ovulatory Irregularity / PCOS Tendency</span>
-                <span className="text-rose-700">Score: 78% (Moderate-High)</span>
+            
+            <div className="space-y-3">
+              {/* Pattern 1: PCOS */}
+              <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/50 text-xs space-y-2">
+                <div className="flex justify-between font-bold text-gray-900">
+                  <span>1. Suspected Ovulatory Irregularity / PCOS Tendency</span>
+                  <span className="text-rose-700 font-mono">Trained Score: {predictions.pcos.score}% ({predictions.pcos.riskLevel})</span>
+                </div>
+                <p className="text-gray-700 leading-relaxed">
+                  <strong>SHAP Drivers:</strong> {predictions.pcos.shapFactors.map(f => `${f.feature} (+${f.weight}%)`).join(", ")}.
+                </p>
+                <span className="text-[10px] text-gray-500 font-mono block">
+                  Validation Benchmark: {predictions.pcos.confidence}
+                </span>
               </div>
-              <p className="text-gray-700">
-                Attribution: 11-day cycle variability + recurring luteal acne and afternoon fatigue. Suggested: Day-3 hormone profile (LH, FSH, Prolactin, Fasting Insulin) and pelvic sonography.
-              </p>
+
+              {/* Pattern 2: Dysmenorrhea */}
+              <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/50 text-xs space-y-2">
+                <div className="flex justify-between font-bold text-gray-900">
+                  <span>2. Dysmenorrhea & Pelvic Prostaglandin Flare Index</span>
+                  <span className="text-amber-800 font-mono">Trained Score: {predictions.dysmenorrhea.score}% ({predictions.dysmenorrhea.riskLevel})</span>
+                </div>
+                <p className="text-gray-700 leading-relaxed">
+                  <strong>SHAP Drivers:</strong> {predictions.dysmenorrhea.shapFactors.map(f => `${f.feature} (+${f.weight}%)`).join(", ")}.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -284,8 +323,9 @@ export default function ReportsView() {
             <div>
               <p className="font-bold text-gray-900 mb-1">Physician Clinical Recommendations:</p>
               <ul className="list-disc pl-4 space-y-1 text-gray-600">
-                <li>Review ultrasound scan for ovarian volume and follicular count.</li>
-                <li>Evaluate Serum Ferritin and Hemoglobin levels.</li>
+                <li>Pelvic ultrasound (transabdominal/transvaginal) for follicular count and ovarian volume.</li>
+                <li>Endocrine panel: LH, FSH, Estradiol, Fasting Insulin, and TSH.</li>
+                <li>Serum Ferritin and CBC check for baseline iron reserves.</li>
               </ul>
             </div>
 
@@ -299,7 +339,7 @@ export default function ReportsView() {
           </div>
 
           <div className="text-[10px] text-gray-400 text-center pt-2">
-            SakhiAI Explainable AI clinical report. Formatted for standardized medical consultation.
+            SakhiAI Explainable AI clinical report. Powered by trained unified machine learning ensemble ({modelInfo.modelName}).
           </div>
         </div>
       )}
