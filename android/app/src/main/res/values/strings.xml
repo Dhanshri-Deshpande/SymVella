@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Symvella</string>
     <string name="title_activity_main">Symvella</string>
-    <string name="package_name">com.sakhiai.health</string>
-    <string name="custom_url_scheme">com.sakhiai.health</string>
+    <string name="package_name">com.symvella.health</string>
+    <string name="custom_url_scheme">com.symvella.health</string>
 </resources>

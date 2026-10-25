@@ -45,7 +45,7 @@ import {
 import { generateRAGResponse } from "../services/ragService";
 import ChatFormattedMessage from "../components/ChatFormattedMessage";
 
-export default function SakhiChat() {
+export default function SymvellaChat() {
   const { language, setLanguage, userProfile, t } = useApp();
 
   const [messages, setMessages] = useState([

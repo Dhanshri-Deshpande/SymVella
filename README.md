@@ -1,12 +1,16 @@
-# Symvella (formerly SakhiAI) 🌸
+# Symvella 🌸
 ### *Multilingual, Explainable AI Companion & Clinical Intelligence Platform for Women's Health*
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-sym--vella.vercel.app-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://sym-vella.vercel.app)
 [![Vite](https://img.shields.io/badge/Vite-8.3.5-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-19.3-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Clinical Standards](https://img.shields.io/badge/Protocols-FOGSI_%7C_Rotterdam_%7C_ICMR-863BFF)](#clinical-protocols--medical-evidence-base)
 [![Privacy](https://img.shields.io/badge/Privacy-DPDP_2023_Compliant-10B981)](#privacy--data-security)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+> 🚀 **Live Production Deployment**: **[https://sym-vella.vercel.app](https://sym-vella.vercel.app)**  
+> *Fully responsive on mobile, tablet, and desktop with automated HTTPS/SSL.*
 
 ---
 
@@ -299,7 +303,7 @@ healthcare/
 │   │   ├── HomeDashboard.jsx        # Cycle wheel, daily remedies, and health vitals
 │   │   ├── InfoHubView.jsx          # Educational clinical library & government schemes
 │   │   ├── ReportsView.jsx          # Weekly & Monthly reports with PDF downloads
-│   │   ├── SakhiChat.jsx            # Standalone dedicated chat interface
+│   │   ├── SymvellaChat.jsx         # Standalone dedicated chat interface
 │   │   └── SettingsView.jsx         # Profile settings, alarm sounds, and data reset
 │   ├── App.jsx                      # Root application layout & routing controller
 │   ├── index.css                    # Tailwind CSS v4 styling rules

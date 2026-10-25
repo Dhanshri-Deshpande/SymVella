@@ -1,5 +1,5 @@
 """
-SakhiAI - Unified Multi-Task Clinical Machine Learning Model Training Pipeline
+Symvella - Unified Multi-Task Clinical Machine Learning Model Training Pipeline
 Combines Daily Triage, Weekly Trend Analysis, Monthly Risk Screening (PCOS, Dysmenorrhea, Anemia),
 and ML-Driven Gharelu Upay (Home Remedy) Recommendation & Tree-SHAP Feature Attribution
 into a single consolidated model.
@@ -23,7 +23,7 @@ os.makedirs("ml/models", exist_ok=True)
 os.makedirs("src/data", exist_ok=True)
 
 print("=" * 75)
-print("[INFO] Training SakhiAI Consolidated Multi-Task Clinical & Remedy ML Model")
+print("[INFO] Training Symvella Consolidated Multi-Task Clinical & Remedy ML Model")
 print("=" * 75)
 
 # 1. SYNTHESIZE CLINICAL BENCHMARK DATASET

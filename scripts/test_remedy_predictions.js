@@ -1,7 +1,7 @@
 import { generateDailyReport } from "./src/data/ghareluUpayEngine.js";
 
 console.log("=================================================================");
-console.log(" SakhiAI - ML-Driven Gharelu Upay Prediction Verification");
+console.log(" Symvella - ML-Driven Gharelu Upay Prediction Verification");
 console.log("=================================================================");
 
 // 1. SCENARIO A: Low Pain Check-in (Pain VAS = 1, healthy homeostasis)

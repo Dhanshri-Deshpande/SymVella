@@ -1,4 +1,4 @@
-package com.sakhiai.health;
+package com.symvella.health;
 
 import com.getcapacitor.BridgeActivity;
 
