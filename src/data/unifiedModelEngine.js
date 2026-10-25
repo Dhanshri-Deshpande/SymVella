@@ -146,7 +146,9 @@ export function predictGhareluUpayML(features, language = "en", logData = {}) {
   const evaluatedRemedies = remedyKeys.map(rKey => {
     const weights = remedyWeights[rKey] || [];
     const catalogItem = GHARELU_UPAY_CATALOG[rKey];
-    const localized = catalogItem ? (catalogItem[language] || catalogItem["en"]) : {};
+    const localized = catalogItem 
+      ? (catalogItem[language] || (language === "hinglish" ? catalogItem["hi"] : null) || (language === "mr" ? catalogItem["mr"] || catalogItem["hi"] : null) || (language === "ta" ? catalogItem["ta"] : null) || catalogItem["en"]) 
+      : {};
     const metricName = `Remedy: ${catalogItem?.metricLabel || rKey}`;
     const accuracy = metadata.metrics[metricName] || 95.0;
 
@@ -216,6 +218,12 @@ export function predictGhareluUpayML(features, language = "en", logData = {}) {
       topFactor,
       shapExplanation: language === "hi"
         ? `प्रमुख नैदानिक कारण: ${topFactor.feature} (+${topFactor.weight}% प्रभाव)`
+        : language === "mr"
+        ? `प्रमुख क्लिनिकल कारण: ${topFactor.feature} (+${topFactor.weight}% प्रभाव)`
+        : language === "ta"
+        ? `முக்கிய மருத்துவக் காரணம்: ${topFactor.feature} (+${topFactor.weight}% தாக்கம்)`
+        : language === "hinglish"
+        ? `Primary Clinical Marker: ${topFactor.feature} (+${topFactor.weight}% weight)`
         : `Primary Clinical Indicator: ${topFactor.feature} (+${topFactor.weight}% clinical weight)`
     };
   });

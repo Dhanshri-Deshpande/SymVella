@@ -1,14 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { useApp } from "../context/AppContext";
 import { SYMVELLA_LANGUAGES } from "../data/botKnowledge";
 import { 
   Heart, 
-  Bell, 
   ShieldAlert, 
-  Globe,
-  Settings
+  Globe
 } from "lucide-react";
-import AlarmEscalationModal from "./AlarmEscalationModal";
 
 export default function Navbar() {
   const { 
@@ -16,10 +13,9 @@ export default function Navbar() {
     setLanguage, 
     setIsSOSOpen,
     setActiveTab,
-    activeTab
+    activeTab,
+    t
   } = useApp();
-
-  const [isAlarmModalOpen, setIsAlarmModalOpen] = useState(false);
 
   return (
     <>
@@ -42,11 +38,11 @@ export default function Navbar() {
                   Sym<span className="text-[var(--color-primary)]">vella</span>
                 </h1>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary)] uppercase tracking-wide">
-                  Women's Health
+                  {t("nav.brand_sub", "Women's Health")}
                 </span>
               </div>
               <p className="text-[11px] text-[var(--color-text-muted)] hidden sm:block">
-                Multilingual Clinical Companion & Cycle Intelligence
+                {t("nav.tagline", "Multilingual Clinical Companion & Cycle Intelligence")}
               </p>
             </div>
           </button>
@@ -68,49 +64,19 @@ export default function Navbar() {
               </select>
             </div>
 
-            {/* Smart Alarm Demo Button */}
-            <button
-              onClick={() => setIsAlarmModalOpen(true)}
-              className="p-1.5 px-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-              title="Daily Alarm & Clinical Reminders"
-            >
-              <Bell className="w-4 h-4 text-purple-600" />
-              <span className="hidden sm:inline">Alarms</span>
-            </button>
-
-            {/* Settings & Profile Button */}
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`p-1.5 px-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                activeTab === "settings"
-                  ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-xs"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200"
-              }`}
-              title="Settings"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </button>
-
             {/* SOS Emergency Button */}
             <button
               onClick={() => setIsSOSOpen(true)}
               className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-transform active:scale-95 animate-soft-pulse"
-              title="Emergency SOS Red-Flag"
+              title={t("nav.sos", "Emergency SOS Red-Flag")}
             >
               <ShieldAlert className="w-4 h-4" />
-              <span>SOS</span>
+              <span>{t("nav.sos", "SOS")}</span>
             </button>
 
           </div>
         </div>
       </header>
-
-      {/* Alarm Modal Simulator */}
-      <AlarmEscalationModal
-        isOpen={isAlarmModalOpen}
-        onClose={() => setIsAlarmModalOpen(false)}
-      />
     </>
   );
 }

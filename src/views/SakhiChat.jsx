@@ -43,23 +43,38 @@ import {
   resetTokenUsage 
 } from "../services/gnaniService";
 import { generateRAGResponse } from "../services/ragService";
+import ChatFormattedMessage from "../components/ChatFormattedMessage";
 
 export default function SakhiChat() {
-  const { language, setLanguage, userProfile } = useApp();
+  const { language, setLanguage, userProfile, t } = useApp();
 
   const [messages, setMessages] = useState([
     {
       id: "m_init",
       sender: "sakhi",
-      text: language === "hi" 
-        ? "नमस्ते! मैं आपकी स्वास्थ्य साथी (Symvella) हूँ। आप मुझसे माहवारी, पीरियड्स के दर्द, पीसीओएस (PCOS), नींद, या किसी भी स्वास्थ्य चिंता के बारे में अपनी भाषा में पूछ सकती हैं। मैं सिर्फ जानकारी और सहायता देती हूँ, चिकित्सीय पर्चा नहीं लिखती।"
-        : language === "hinglish"
-        ? "Namaste! Main aapki health companion Symvella hoon. Aap mujhse menstrual cycle, cramps, PCOS, ya kisi bhi symptom ke baare mein freely baat kar sakti hain. I'm here to support you with 100% privacy."
-        : "Hello! I am Symvella, your multilingual health companion. You can ask me questions about menstrual health, cramps, PCOS, sleep, or request an explanation of your symptoms. I am here to guide and inform with complete privacy.",
+      text: t("chat.greeting", "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language."),
       timestamp: "Just now",
       source: "Clinical Companion Standard"
     }
   ]);
+
+  // Dynamically update greeting when language changes
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].id === "m_init") {
+        return [
+          {
+            id: "m_init",
+            sender: "sakhi",
+            text: t("chat.greeting", "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language."),
+            timestamp: "Just now",
+            source: "Clinical Companion Standard"
+          }
+        ];
+      }
+      return prev;
+    });
+  }, [language, t]);
 
   const [inputVal, setInputVal] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -154,10 +169,8 @@ export default function SakhiChat() {
       recognition.continuous = false;
       recognition.interimResults = false;
       
-      if (language === "hi") recognition.lang = "hi-IN";
-      else if (language === "ta") recognition.lang = "ta-IN";
-      else if (language === "mr") recognition.lang = "mr-IN";
-      else recognition.lang = "en-IN";
+      const langMap = { hi: "hi-IN", mr: "mr-IN", ta: "ta-IN", hinglish: "hi-IN", en: "en-IN" };
+      recognition.lang = langMap[language] || "en-IN";
 
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
@@ -492,76 +505,14 @@ export default function SakhiChat() {
                     ? "bg-[var(--color-primary)] text-white rounded-br-xs"
                     : m.isAlert
                     ? "bg-rose-50 text-rose-950 border border-rose-300 rounded-bl-xs"
-                    : "bg-gray-50 text-gray-800 border border-gray-200 rounded-bl-xs"
+                    : "bg-white text-gray-800 border border-purple-100 rounded-bl-xs shadow-2xs"
                 }`}
               >
-                <p className="whitespace-pre-line">{m.text}</p>
-                
-                {/* RAG Retrieved Medical Literature Evidence Drawer */}
-                {!isUser && m.retrievedDocs && m.retrievedDocs.length > 0 && (
-                  <div className="mt-3 pt-2.5 border-t border-purple-100">
-                    <button
-                      type="button"
-                      onClick={() => toggleSourceExpansion(m.id)}
-                      className="w-full flex items-center justify-between text-xs font-semibold text-purple-900 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-xl border border-purple-200 transition-colors cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-purple-600 shrink-0" />
-                        <span>RAG Retrieved Medical Sources ({m.retrievedDocs.length} Verified Guidelines)</span>
-                        <span className="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px] font-mono">
-                          {m.ragConfidence ? `${Math.round(m.ragConfidence * 100)}% match` : "Verified"}
-                        </span>
-                      </span>
-                      <span className="text-purple-600 font-bold">{expandedSources[m.id] ? "▲" : "▼"}</span>
-                    </button>
-
-                    {expandedSources[m.id] && (
-                      <div className="mt-2.5 space-y-2 animate-in fade-in">
-                        {m.retrievedDocs.map((doc, dIdx) => (
-                          <div key={dIdx} className="p-3 rounded-xl bg-white border border-purple-150 text-xs space-y-1.5 shadow-2xs">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-bold text-purple-950 flex items-center gap-1.5 text-xs">
-                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                {doc.organization}
-                              </span>
-                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold">
-                                {doc.confidencePct ? `${doc.confidencePct}% match` : doc.year}
-                              </span>
-                            </div>
-                            <p className="font-semibold text-gray-800 text-xs leading-snug">
-                              {doc.title}
-                            </p>
-                            <p className="text-[11px] text-gray-500 italic">
-                              {doc.citation}
-                            </p>
-                            {doc.keyTakeaways && doc.keyTakeaways.length > 0 && (
-                              <div className="text-[11px] text-gray-700 pt-1 border-t border-gray-100">
-                                <strong>Clinical Evidence Finding:</strong> {doc.keyTakeaways[0]}
-                              </div>
-                            )}
-                            {doc.url && (
-                              <a
-                                href={doc.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[11px] text-purple-600 hover:text-purple-800 underline flex items-center gap-1 pt-1 font-medium"
-                              >
-                                View Official Guideline Reference <ExternalLink className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                <ChatFormattedMessage content={m.text} isUser={isUser} />
 
                 {/* Voice listen button for bot messages */}
                 {!isUser && (
-                  <div className="mt-2 pt-2 border-t border-black/5 flex items-center justify-between text-[11px] text-gray-500">
-                    <span className="inline-flex items-center gap-1 font-medium text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 text-[10px]">
-                      <Zap className="w-2.5 h-2.5 text-purple-600 shrink-0" /> Gnani Prisma V2.5 • Proper Script
-                    </span>
+                  <div className="mt-2 pt-2 border-t border-black/5 flex items-center justify-end text-[11px] text-gray-500">
                     <button
                       onClick={() => handlePlaySpeech(m.text, m.id)}
                       className={`p-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer ${
@@ -682,12 +633,10 @@ export default function SakhiChat() {
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder={
             isListening 
-              ? "Listening to your voice... Tap mic to transcribe" 
+              ? t("chat.listening", "Listening to your voice... Tap mic to transcribe") 
               : isTranscribing
-              ? "Gnani Prisma is transcribing your speech..."
-              : language === "hi" 
-              ? "अपनी समस्या या लक्षण यहाँ लिखें..." 
-              : "Ask Symvella about symptoms, pain, cycles, or nutrition..."
+              ? t("chat.transcribing", "Gnani Prisma is transcribing your speech...")
+              : t("chat.placeholder", "Ask Symvella about symptoms, pain, cycles, or nutrition...")
           }
           className="flex-1 bg-gray-50 border border-gray-200 focus:border-[var(--color-primary)] focus:bg-white rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-gray-900 focus:outline-none transition-colors"
         />
@@ -700,12 +649,6 @@ export default function SakhiChat() {
         >
           <Send className="w-5 h-5" />
         </button>
-      </div>
-
-      {/* Clinical Disclaimer footer */}
-      <div className="bg-gray-50 px-4 py-1.5 border-t border-gray-100 text-[10px] text-gray-400 text-center flex items-center justify-center gap-1">
-        <ShieldCheck className="w-3 h-3 text-emerald-600" />
-        <span>Symvella informs & guides; does not diagnose or prescribe. In emergencies, call 112.</span>
       </div>
 
     </div>

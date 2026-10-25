@@ -12,7 +12,7 @@ import {
 import confetti from "canvas-confetti";
 
 export default function PeriodDateModal() {
-  const { isPeriodModalOpen, setIsPeriodModalOpen, addPeriodEntry, userProfile } = useApp();
+  const { isPeriodModalOpen, setIsPeriodModalOpen, addPeriodEntry, userProfile, t } = useApp();
 
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(
@@ -45,6 +45,20 @@ export default function PeriodDateModal() {
     });
   };
 
+  const flowOptions = [
+    { key: "Spotting", label: t("period_modal.flow_spotting", "Spotting") },
+    { key: "Light", label: t("period_modal.flow_light", "Light") },
+    { key: "Normal", label: t("period_modal.flow_medium", "Normal") },
+    { key: "Heavy", label: t("period_modal.flow_heavy", "Heavy") }
+  ];
+
+  const painOptions = [
+    { key: "None", label: t("period_modal.pain_none", "None") },
+    { key: "Mild", label: t("period_modal.pain_mild", "Mild") },
+    { key: "Moderate", label: t("period_modal.pain_moderate", "Moderate") },
+    { key: "Severe", label: t("period_modal.pain_severe", "Severe") }
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border-2 border-[var(--color-border)] animate-in fade-in zoom-in duration-200 my-auto">
@@ -56,13 +70,13 @@ export default function PeriodDateModal() {
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-900">Log Period Dates & Cycle Info</h3>
-              <p className="text-xs text-gray-500">Record your latest menstrual dates to update your cycle graph</p>
+              <h3 className="text-lg font-bold text-gray-900">{t("period_modal.title", "Log Period Dates & Cycle Info")}</h3>
+              <p className="text-xs text-gray-500">{t("period_modal.subtitle", "Record your latest menstrual dates to update your cycle graph")}</p>
             </div>
           </div>
           <button
             onClick={() => setIsPeriodModalOpen(false)}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700"
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -75,7 +89,7 @@ export default function PeriodDateModal() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="font-semibold text-gray-700 block">
-                Period Start Date 🩸
+                {t("period_modal.start_date", "Period Starting Date")} 🩸
               </label>
               <input
                 type="date"
@@ -88,7 +102,7 @@ export default function PeriodDateModal() {
 
             <div className="space-y-1">
               <label className="font-semibold text-gray-700 block">
-                Period End Date ✨
+                {t("period_modal.end_date", "Period Ending Date")} ✨
               </label>
               <input
                 type="date"
@@ -102,20 +116,20 @@ export default function PeriodDateModal() {
 
           {/* Flow Level Selection */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-gray-700 block">Overall Flow Intensity:</label>
+            <label className="font-semibold text-gray-700 block">{t("period_modal.flow_label", "Overall Flow Intensity")}:</label>
             <div className="grid grid-cols-4 gap-2">
-              {["Spotting", "Light", "Normal", "Heavy"].map((f) => (
+              {flowOptions.map((f) => (
                 <button
-                  key={f}
+                  key={f.key}
                   type="button"
-                  onClick={() => setFlow(f)}
-                  className={`py-2 px-1 rounded-xl border text-center font-medium transition-all ${
-                    flow === f
+                  onClick={() => setFlow(f.key)}
+                  className={`py-2 px-1 rounded-xl border text-center font-medium transition-all cursor-pointer ${
+                    flow === f.key
                       ? "border-[var(--color-primary)] bg-[var(--color-badge-bg)] text-[var(--color-primary-dark)] font-bold shadow-2xs"
                       : "border-gray-200 bg-white text-gray-600 hover:border-pink-200"
                   }`}
                 >
-                  {f}
+                  {f.label}
                 </button>
               ))}
             </div>
@@ -123,20 +137,20 @@ export default function PeriodDateModal() {
 
           {/* Cramp / Pain Severity */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-gray-700 block">Peak Pain / Cramp Severity:</label>
+            <label className="font-semibold text-gray-700 block">{t("period_modal.pain_label", "Pain & Discomfort")}:</label>
             <div className="grid grid-cols-4 gap-2">
-              {["None", "Mild", "Moderate", "Severe"].map((p) => (
+              {painOptions.map((p) => (
                 <button
-                  key={p}
+                  key={p.key}
                   type="button"
-                  onClick={() => setPainLevel(p)}
-                  className={`py-2 px-1 rounded-xl border text-center font-medium transition-all ${
-                    painLevel === p
+                  onClick={() => setPainLevel(p.key)}
+                  className={`py-2 px-1 rounded-xl border text-center font-medium transition-all cursor-pointer ${
+                    painLevel === p.key
                       ? "border-[var(--color-primary)] bg-[var(--color-badge-bg)] text-[var(--color-primary-dark)] font-bold shadow-2xs"
                       : "border-gray-200 bg-white text-gray-600 hover:border-pink-200"
                   }`}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -144,12 +158,12 @@ export default function PeriodDateModal() {
 
           {/* Notes Input */}
           <div className="space-y-1">
-            <label className="font-semibold text-gray-700 block">Personal Notes / Symptoms:</label>
+            <label className="font-semibold text-gray-700 block">{t("period_modal.notes_label", "Personal Notes / Symptoms")}:</label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Started 2 days late, mild pelvic cramping on Day 1..."
+              placeholder={t("period_modal.notes_placeholder", "e.g. Started 2 days late, mild pelvic cramping...")}
               className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"
             />
           </div>
@@ -165,15 +179,15 @@ export default function PeriodDateModal() {
             <button
               type="button"
               onClick={() => setIsPeriodModalOpen(false)}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50"
+              className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 cursor-pointer"
             >
-              Cancel
+              {t("period_modal.cancel_btn", "Cancel")}
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold shadow-sm transition-transform active:scale-95"
+              className="px-5 py-2 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold shadow-sm transition-transform active:scale-95 cursor-pointer"
             >
-              Save Period Entry ✨
+              {t("period_modal.save_btn", "Save Period Dates")} ✨
             </button>
           </div>
         </form>

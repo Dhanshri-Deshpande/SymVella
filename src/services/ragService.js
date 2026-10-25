@@ -414,7 +414,8 @@ const DOC_INDIC_SCRIPTS = {
 export function synthesizeLocalRAGAnswer(query, retrievedDocs = [], options = {}) {
   const { language = "en", userProfile = {} } = options;
   const effectiveLanguage = detectQueryLanguage(query, language);
-  const name = userProfile.name ? userProfile.name.split(" ")[0] : (effectiveLanguage === "hi" ? "सखी" : "Friend");
+  const friendNameMap = { hi: "सखी", mr: "मैत्रीण", ta: "தோழி", hinglish: "Sakhi", en: "Friend" };
+  const name = userProfile.name ? userProfile.name.split(" ")[0] : (friendNameMap[effectiveLanguage] || "Friend");
   const primaryDoc = retrievedDocs[0];
 
   // 1. Check our 30+ specialized clinical domains for human-crafted, culturally fluent guidance
@@ -435,24 +436,23 @@ export function synthesizeLocalRAGAnswer(query, retrievedDocs = [], options = {}
   const indicEntry = primaryDoc?.id ? DOC_INDIC_SCRIPTS[primaryDoc.id]?.[effectiveLanguage] : null;
 
   if (effectiveLanguage === "hi") {
-    const greeting = `🌸 नमस्ते ${name}! आपके प्रश्न के संबंध में यहाँ चिकित्सा विज्ञान और क्लीनिकल गाइडलाइन्स पर आधारित प्रामाणिक जानकारी है:`;
-    const summary = indicEntry?.summary || "लक्षण आमतौर पर हार्मोनल संतुलन (एस्ट्रोजन और प्रोजेस्टेरोन) के स्वाभाविक बदलावों से जुड़े होते हैं।";
+    const summary = indicEntry?.summary || "यह लक्षण हार्मोन्स (एस्ट्रोजन और प्रोजेस्टेरोन) के स्वाभाविक बदलावों के कारण गर्भाशय की मांसपेशियों में खिंचाव से होते हैं।";
     const takeaways = (indicEntry?.takeaways || primaryDoc?.keyTakeaways || [
-      "पर्याप्त गुनगुना पानी पिएं और शरीर को डिहाइड्रेशन से बचाएं।",
-      "हल्की गर्म सिकाई और अदरक या अजवाइन की चाय गर्भाशय की मांसपेशियों को शांत करती है।",
-      "7-8 घंटे की नियमित नींद लें और तनाव कम करने के लिए डीप ब्रीदिंग करें।"
+      "पेट के निचले हिस्से पर 15-20 मिनट गर्म पानी की थैली (हीटिंग पैड) से सिकाई करें।",
+      "गुनगुने पानी में आधा चम्मच अजवाइन और गुड़ उबालकर पिएं—मांसपेशियों को तुरंत आराम मिलता है।",
+      "7-8 घंटे की गहरी नींद लें, हल्की सैर करें और पर्याप्त गुनगुना पानी पिएं।"
     ]).map(t => `• ${t}`).join("\n");
 
-    const redFlags = (indicEntry?.redFlags || primaryDoc?.redFlags || []).length > 0
-      ? `\n\n🚨 **स्त्री रोग विशेषज्ञ (Gynecologist) से कब मिलें:**\n` + (indicEntry?.redFlags || primaryDoc?.redFlags).map(r => `• ${r}`).join("\n")
-      : "";
+    const redFlags = (indicEntry?.redFlags || primaryDoc?.redFlags || [
+      "असहनीय दर्द जो सामान्य काम न करने दे या दवाइयों से भी न रुके।",
+      "लगातार उल्टियां, तेज बुखार या हर घंटे पैड पूरी तरह भीगना।"
+    ]).map(r => `• ${r}`).join("\n");
 
     const responseText = [
-      greeting,
-      `\n\n🌸 **शरीर में क्या हो रहा है (चिकित्सीय कारण):**\n${summary}`,
-      `\n\n🌿 **राहत के व्यावहारिक कदम और घरेलू उपाय:**\n${takeaways}`,
-      redFlags
-    ].filter(Boolean).join("");
+      `💡 **सीधा उत्तर (कारण):**\n${summary}`,
+      `\n\n🌿 **राहत के तुरंत उपाय:**\n${takeaways}`,
+      `\n\n🚨 **डॉक्टर से कब मिलें:**\n${redFlags}`
+    ].join("");
 
     return {
       text: responseText,
@@ -464,18 +464,22 @@ export function synthesizeLocalRAGAnswer(query, retrievedDocs = [], options = {}
   }
 
   if (effectiveLanguage === "mr") {
-    const greeting = `🌸 नमस्कार ${name}! तुमच्या प्रश्नासाठी वैद्यकीय पुरावे आणि क्लिनिकल मार्गदर्शक तत्त्वांवर आधारित माहिती:`;
-    const summary = "मासिक पाळीदरम्यान हे बदल शरीरातील हॉर्मोन्सच्या नैसर्गिक चढ-उतारामुळे जाणवतात.";
+    const summary = "मासिक पाळीदरम्यान हे बदल शरीरातील हॉर्मोन्सच्या नैसर्गिक चढ-उतारामुळे गर्भाशयाच्या स्नायूंमध्ये जाणवतात.";
     const takeaways = [
-      "• पोटावर किंवा कंबरेवर कोमट पाण्याच्या पिशवीने शेक द्यावा.",
-      "• बडीशेप किंवा आल्याचे कोमट पाणी प्यावे, यामुळे स्नायूंना आराम मिळतो.",
-      "• पुरेशी विश्रांती घ्या आणि आहारात पालेभाज्यांचा समावेश करा."
+      "• पोटावर किंवा कंबरेवर कोमट पाण्याच्या पिशवीने १५-२० मिनिटे शेक द्यावा.",
+      "• बडीशेप किंवा आल्याचे कोमट पाणी प्यावे, यामुळे स्नायूंना लगेच आराम मिळतो.",
+      "• भरपूर कोमट पाणी प्या आणि हलके स्ट्रेचिंग (बालासन) करा."
+    ].join("\n");
+
+    const redFlags = [
+      "• औषधांनीही न थांबणारी तीव्र पोटदुखी.",
+      "• चक्कर येणे, सतत उलट्या किंवा दर तासाला पॅड बदलावा लागणे."
     ].join("\n");
 
     const responseText = [
-      greeting,
-      `\n\n🌸 **शरीरात काय घडत आहे (वैद्यकीय कारण):**\n${summary}`,
-      `\n\n🌿 **आराम आणि घरगुती उपाय:**\n${takeaways}`
+      `💡 **थेट उत्तर (कारण):**\n${summary}`,
+      `\n\n🌿 **घरगुती उपाय व आराम:**\n${takeaways}`,
+      `\n\n🚨 **डॉक्टरांचा सल्ला कधी घ्यावा:**\n${redFlags}`
     ].join("");
 
     return {
@@ -488,18 +492,22 @@ export function synthesizeLocalRAGAnswer(query, retrievedDocs = [], options = {}
   }
 
   if (effectiveLanguage === "ta") {
-    const greeting = `🌸 வணக்கம் ${name}! உங்கள் கேள்விகளுக்கான நம்பகமான மருத்துவ வழிகாட்டுதல்:`;
-    const summary = "உடலில் ஏற்படும் ஹார்மோன் மாற்றங்களால் இந்த அறிகுறிகள் ஏற்படுகின்றன.";
+    const summary = "உடலில் ஏற்படும் ஹார்மோன் மாற்றங்களால் கருப்பை தசைகளில் ஏற்படும் சுருக்கங்கள் இந்த அறிகுறிகளுக்கு காரணம்.";
     const takeaways = [
-      "• வெந்நீர் ஒத்தடம் கொடுப்பது தசை இறுக்கத்தை எளிதில் குறைக்கும்.",
+      "• அடிவயிற்றில் 15-20 நிமிடங்கள் வெந்நீர் ஒத்தடம் கொடுப்பது தசை இறுக்கத்தை எளிதில் குறைக்கும்.",
       "• இஞ்சி அல்லது சீரகக் குடிநீர் பருகுவது உடல் சோர்வை நீக்கும்.",
-      "• போதுமான தூக்கம் மற்றும் ஆரோக்கியமான உணவு முறையை கடைபிடிக்கவும்."
+      "• போதுமான அளவு வெந்நீர் அருந்தி போதிய ஓய்வு எடுக்கவும்."
+    ].join("\n");
+
+    const redFlags = [
+      "• தாங்க முடியாத கடுமையான வலி.",
+      "• தொடர் வாந்தி, மயக்கம் அல்லது அதிக இரத்தப்போக்கு."
     ].join("\n");
 
     const responseText = [
-      greeting,
-      `\n\n🌸 **உடலில் என்ன நடக்கிறது (காரணம்):**\n${summary}`,
-      `\n\n🌿 **எளிய நிவாரண வழிகள் மற்றும் வீட்டு வைத்தியம்:**\n${takeaways}`
+      `💡 **நேரடி விளக்கம் (காரணம்):**\n${summary}`,
+      `\n\n🌿 **எளிய நிவாரண வழிகள்:**\n${takeaways}`,
+      `\n\n🚨 **மருத்துவரை எப்போது அணுக வேண்டும்:**\n${redFlags}`
     ].join("");
 
     return {
@@ -511,20 +519,52 @@ export function synthesizeLocalRAGAnswer(query, retrievedDocs = [], options = {}
     };
   }
 
-  // English fallback with proper companion dialogue script
-  const greeting = `🌸 Hello ${name}! Here is clear, compassionate, and evidence-grounded clinical guidance for your question:`;
-  const takeaways = primaryDoc?.keyTakeaways?.map(t => `• ${t}`).join("\n") 
-    || `• Rest, stay hydrated, and track symptoms in Symvella.`;
-  const redFlags = primaryDoc?.redFlags && primaryDoc.redFlags.length > 0
-    ? `\n\n🚨 **When to Consult a Gynecologist:**\n` + primaryDoc.redFlags.map(r => `• ${r}`).join("\n")
-    : "";
+  if (effectiveLanguage === "hinglish") {
+    const summary = "Yeh symptoms menstrual cycle ke dauran hormones (estrogen aur progesterone) ke natural shifts ki wajah se hote hain.";
+    const takeaways = [
+      "• Lower belly par 15-20 min warm heating pad lagayein—muscles relax hoti hain.",
+      "• Gungune paani mein ajwain aur gud ka kadha ya adrak ki chai piyein.",
+      "• Gentle walk ya Child's pose karein aur 2.5L warm water maintain karein."
+    ].join("\n");
+
+    const redFlags = [
+      "• Asahaniya dard jo medicines lene ke baad bhi shant na ho.",
+      "• Har ghante pad soak hona, heavy clots ya chakkar aana."
+    ].join("\n");
+
+    const responseText = [
+      `💡 **Direct Answer (Reason):**\n${summary}`,
+      `\n\n🌿 **Quick Action Steps (Relief):**\n${takeaways}`,
+      `\n\n🚨 **When to Consult Doctor:**\n${redFlags}`
+    ].join("");
+
+    return {
+      text: responseText,
+      sources: primaryDoc?.organization || "Clinical Companion",
+      isAlert: false,
+      language: "hinglish",
+      isRAG: true
+    };
+  }
+
+  // English fallback: crisp, clean, direct 3-part layout
+  const summary = primaryDoc?.summary || "Symptoms are linked to natural shifts in estrogen and progesterone during your menstrual cycle.";
+  const takeaways = (primaryDoc?.keyTakeaways || [
+    "Apply a warm heating pad to your lower belly or back for 15-20 mins.",
+    "Sip warm herbal tea (ginger, chamomile, or peppermint) to ease muscle tension.",
+    "Stay hydrated with warm water and practice restorative resting positions (Child's Pose)."
+  ]).map(t => `• ${t}`).join("\n");
+
+  const redFlags = (primaryDoc?.redFlags || [
+    "Severe pain that prevents daily activities and doesn't ease with home care.",
+    "Soaking 1+ pads per hour, fever, or continuous nausea."
+  ]).map(r => `• ${r}`).join("\n");
 
   const responseText = [
-    greeting,
-    `\n\n🌸 **Understanding What's Happening in Your Body:**\n${primaryDoc?.summary || "Symptoms are typically linked to shifting progesterone and estrogen balances."}`,
-    `\n\n🌿 **Evidence-Based Relief & Action Steps:**\n${takeaways}`,
-    redFlags
-  ].filter(Boolean).join("");
+    `💡 **Quick Answer:**\n${summary}`,
+    `\n\n🌿 **What You Can Do (Quick Relief):**\n${takeaways}`,
+    `\n\n🚨 **When to See a Doctor:**\n${redFlags}`
+  ].join("");
 
   return {
     text: responseText,
@@ -558,7 +598,8 @@ export async function generateRAGResponse({
   const primaryDoc = retrievedDocs[0];
   const confidence = primaryDoc?.matchScore || 0.85;
   const sourcesSummary = retrievedDocs.map(d => d.organization).slice(0, 3).join(" • ");
-  const userName = userProfile.name ? userProfile.name.split(" ")[0] : (effectiveLanguage === "hi" ? "सखी" : "Friend");
+  const friendNameMap = { hi: "सखी", mr: "मैत्रीण", ta: "தோழி", hinglish: "Sakhi", en: "Friend" };
+  const userName = userProfile.name ? userProfile.name.split(" ")[0] : (friendNameMap[effectiveLanguage] || "Friend");
 
   // Step 2: GNANI INDIC LLM INFERENCE (with RAG Augmentation)
   if (gnaniApiKey && gnaniApiKey.trim()) {
@@ -567,14 +608,15 @@ export async function generateRAGResponse({
         `[Trusted Medical Evidence Context]:`,
         primaryDoc?.summary,
         `Key clinical points: ` + (primaryDoc?.keyTakeaways?.join("; ") || "Evidence available"),
-        `\nPatient Name: "${userName}", Biological Stage: "${userProfile.lifeStage || "regular"}"`,
+        `\nPatient: "${userName}", Stage: "${userProfile.lifeStage || "regular"}"`,
         `Patient Question: "${query}"`,
-        `\nInstructions for Gnani Model:`,
-        `1. Answer warmly, empathetically, and conversationally in ${effectiveLanguage}.`,
-        `2. Explain the physiological mechanism simply in proper native script.`,
-        `3. Provide practical, step-by-step home relief and natural remedies (e.g. heating pad, ginger/ajwain tea, gentle yoga).`,
-        `4. List clear warning signs (red flags) on when to visit a gynecologist.`,
-        `5. Do NOT output raw bibliography, document titles, or citation lists in the body text.`
+        `\nCRITICAL FORMAT RULES FOR GNANI MODEL:`,
+        `1. Do NOT write long paragraphs, generic essays, or robotic AI filler. Keep the answer extremely concise, clean, and easy to read in 5 seconds in ${effectiveLanguage}.`,
+        `2. Follow strictly this 3-part scannable format:`,
+        `   💡 **Quick Answer:** (1-2 simple, friendly sentences explaining what is happening without heavy medical jargon).`,
+        `   🌿 **What You Can Do:** (3-4 crisp, highly practical bullet points starting with •, e.g. heating pad, warm tea, gentle stretch, hydration).`,
+        `   🚨 **When to See a Doctor:** (1-2 clear red-flag symptoms starting with •).`,
+        `3. Never output bibliography, citations, or document names in the text.`
       ].join("\n");
       
       const gnaniRes = await callGnaniLLM({

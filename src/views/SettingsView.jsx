@@ -18,6 +18,7 @@ import {
   LogOut
 } from "lucide-react";
 import confetti from "canvas-confetti";
+import { ALARM_SOUND_OPTIONS, playAlarmSoundSample } from "../services/alarmSchedulerService";
 
 export default function SettingsView() {
   const { 
@@ -27,7 +28,12 @@ export default function SettingsView() {
     setActiveTab,
     currentUser,
     setCurrentUser,
-    logout
+    logout,
+    testTriggerAlarm,
+    stopAlarm,
+    isAlarmRinging,
+    isTodayCheckInDone,
+    t
   } = useApp();
 
   // Form states
@@ -39,7 +45,13 @@ export default function SettingsView() {
   const [cycleLength, setCycleLength] = useState(userProfile.cycleLength);
   const [periodDuration, setPeriodDuration] = useState(userProfile.periodDuration);
   const [checkInTime, setCheckInTime] = useState(userProfile.alarmSettings?.time || "20:30");
+  const [selectedSound, setSelectedSound] = useState(userProfile.alarmSettings?.tone || "gentle");
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const handleSelectSound = (soundId) => {
+    setSelectedSound(soundId);
+    playAlarmSoundSample(soundId);
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
@@ -64,7 +76,8 @@ export default function SettingsView() {
       periodDuration: Number(periodDuration),
       alarmSettings: {
         ...prev.alarmSettings,
-        time: checkInTime
+        time: checkInTime,
+        tone: selectedSound
       }
     }));
 
@@ -208,12 +221,12 @@ export default function SettingsView() {
         {/* SECTION 1: Personal Details */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-[var(--color-border)] space-y-4">
           <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <User className="w-4 h-4 text-[var(--color-primary)]" /> Profile Display Name & Age
+            <User className="w-4 h-4 text-[var(--color-primary)]" /> {t("settings.profile_heading", "Profile Display Name & Age")}
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className="font-semibold text-gray-700 block mb-1">Display Name</label>
+              <label className="font-semibold text-gray-700 block mb-1">{t("settings.display_name", "Display Name")}</label>
               <input
                 type="text"
                 required
@@ -224,7 +237,7 @@ export default function SettingsView() {
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 block mb-1">Age in Years (Must be 13+)</label>
+              <label className="font-semibold text-gray-700 block mb-1">{t("settings.age_label", "Age in Years (Must be 13+)")}</label>
               <input
                 type="number"
                 min="13"
@@ -275,76 +288,76 @@ export default function SettingsView() {
           </div>
         </div>
 
-        {/* SECTION 3: Menstrual Cycle Defaults */}
+        {/* SECTION 4: Daily Check-in Alarm */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-[var(--color-border)] space-y-4">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[var(--color-primary)]" /> Baseline Menstrual Parameters
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-gray-700">Average Cycle Length:</span>
-                <span className="font-bold text-[var(--color-primary)] font-mono">{cycleLength} Days</span>
-              </div>
-              <input
-                type="range"
-                min="21"
-                max="45"
-                value={cycleLength}
-                onChange={(e) => setCycleLength(e.target.value)}
-                className="w-full accent-[var(--color-primary)] cursor-pointer"
-              />
-              <span className="text-[10px] text-gray-400">Normal physiological range is between 28 and 35 days</span>
+              <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                <Bell className="w-4 h-4 text-purple-600" /> {t("settings.alarm_heading", "Daily Check-in Reminder")}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Rings daily if your 1-minute check-in is pending.
+              </p>
             </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-semibold text-gray-700">Typical Bleeding Duration:</span>
-                <span className="font-bold text-[var(--color-primary)] font-mono">{periodDuration} Days</span>
+            
+            {isAlarmRinging && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={stopAlarm}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer"
+                >
+                  {t("settings.silence_alarm", "Silence Alarm")}
+                </button>
               </div>
-              <input
-                type="range"
-                min="2"
-                max="10"
-                value={periodDuration}
-                onChange={(e) => setPeriodDuration(e.target.value)}
-                className="w-full accent-[var(--color-primary)] cursor-pointer"
-              />
-              <span className="text-[10px] text-gray-400">Normal duration is between 3 and 7 days</span>
-            </div>
-          </div>
-        </div>
-
-        {/* SECTION 4: Daily Check-in Reminder Timing */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-[var(--color-border)] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-              <Bell className="w-4 h-4 text-purple-600" /> Daily Clinical Check-in Reminders
-            </h3>
-            <button
-              type="button"
-              onClick={() => playChime("gentle")}
-              className="text-xs text-[var(--color-primary)] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-            >
-              <Volume2 className="w-3.5 h-3.5" /> Test Sound Chime
-            </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+            {/* Scheduled Time */}
             <div>
-              <label className="font-semibold text-gray-700 block mb-1">Preferred Reminder Time</label>
+              <label className="font-semibold text-gray-700 text-xs block mb-1.5">
+                {t("settings.reminder_time", "Scheduled Time")}
+              </label>
               <input
                 type="time"
                 value={checkInTime}
                 onChange={(e) => setCheckInTime(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 font-mono"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 font-mono focus:outline-none focus:border-purple-600"
               />
             </div>
 
-            <div className="p-3 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-600 flex flex-col justify-center">
-              <span><strong>Quiet Hours:</strong> 10:00 PM – 07:00 AM (Zero disturbance)</span>
-              <span className="text-[11px] text-gray-400 mt-0.5">Grace period of 30 minutes before gentle chime</span>
+            {/* Choose from 4 Alarm Sounds */}
+            <div className="sm:col-span-2">
+              <label className="font-semibold text-gray-700 text-xs block mb-1.5">
+                Alarm Sound (Tap to Preview)
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {ALARM_SOUND_OPTIONS.map((snd) => {
+                  const isSelected = selectedSound === snd.id;
+                  return (
+                    <button
+                      key={snd.id}
+                      type="button"
+                      onClick={() => handleSelectSound(snd.id)}
+                      className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-purple-50 border-purple-400 text-purple-950 shadow-2xs ring-1 ring-purple-300"
+                          : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                      }`}
+                    >
+                      <div className="min-w-0 flex items-center gap-2">
+                        <span className="text-base shrink-0">{snd.icon}</span>
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs truncate leading-tight">{snd.name}</p>
+                          <p className="text-[10px] text-gray-500 truncate">{snd.desc}</p>
+                        </div>
+                      </div>
+                      <Volume2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? "text-purple-600" : "text-gray-400"}`} />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -354,7 +367,7 @@ export default function SettingsView() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" /> Data Privacy & Medical Records
+                <ShieldCheck className="w-4 h-4 text-emerald-600" /> {t("settings.records_heading", "Data Privacy & Medical Records")}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
                 All health logs are stored locally on your device under strict DPDP Act privacy standards.
@@ -364,7 +377,7 @@ export default function SettingsView() {
 
           <div className="pt-2 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-xs font-bold text-gray-800">Clear All Health Records</p>
+              <p className="text-xs font-bold text-gray-800">{t("settings.clear_records", "Clear All Health Records")}</p>
               <p className="text-[11px] text-gray-500">Permanently wipes all local symptom logs, cycles, and history</p>
             </div>
             <button
@@ -383,7 +396,7 @@ export default function SettingsView() {
             type="submit"
             className="px-6 py-3 rounded-2xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition-transform active:scale-95 cursor-pointer"
           >
-            <Save className="w-4 h-4" /> Save Profile Preferences ✨
+            <Save className="w-4 h-4" /> {t("settings.save_btn", "Save Profile & Settings")} ✨
           </button>
         </div>
 

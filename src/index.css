@@ -60,21 +60,21 @@ body {
   animation: softPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Print Styles for Doctor Clinical Report */
+/* Print Styles for Clinical Health Reports (Weekly Progress & Monthly Consultation) */
 @media print {
   body * {
     visibility: hidden;
   }
-  #doctor-report-printable, #doctor-report-printable * {
+  .printable-report, .printable-report * {
     visibility: visible;
   }
-  #doctor-report-printable {
+  .printable-report {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 20px;
+    padding: 24px;
     background: white !important;
     color: black !important;
   }

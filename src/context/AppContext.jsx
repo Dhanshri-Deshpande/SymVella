@@ -2,6 +2,12 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { INITIAL_USER_PROFILE, INITIAL_SYMPTOM_LOGS } from "../data/sampleData";
 import { generateDailyReport } from "../data/ghareluUpayEngine";
 import { synthesizeGnaniSpeech, stopSpeechPlayback } from "../services/gnaniService";
+import { 
+  hasCompletedTodayCheckIn, 
+  shouldAlarmRing, 
+  alarmAudioEngineInstance 
+} from "../services/alarmSchedulerService";
+import { translate } from "../data/translations";
 
 const AppContext = createContext();
 
@@ -58,8 +64,20 @@ export function AppProvider({ children }) {
     return base;
   });
 
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("symvella_language") || "en";
+  });
   const [symptomLogs, setSymptomLogs] = useState(INITIAL_SYMPTOM_LOGS);
+
+  // Keep language synced with localStorage
+  useEffect(() => {
+    if (language) {
+      localStorage.setItem("symvella_language", language);
+    }
+  }, [language]);
+
+  // Global translation helper
+  const t = (path, params = {}) => translate(language, path, params);
 
   // Keep localStorage synced whenever userProfile or currentUser changes
   useEffect(() => {
@@ -80,39 +98,49 @@ export function AppProvider({ children }) {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const login = ({ identifier, otp }) => {
+  const login = ({ identifier, otp, location }) => {
+    const cleanIdent = (identifier || "").trim();
+    const isEmail = cleanIdent.includes("@");
+    const digitsOnly = cleanIdent.replace(/\D/g, "");
+    const isPhone = digitsOnly.length >= 7;
+
     // Check if we have an existing registered user
     const savedUserStr = localStorage.getItem("symvella_current_user") || localStorage.getItem("sakhi_current_user");
-    let userToUse = null;
+    let userToUse = {};
     if (savedUserStr) {
       try {
         userToUse = JSON.parse(savedUserStr);
       } catch (e) {}
     }
 
-    if (!userToUse || !userToUse.firstName) {
-      const cleanIdent = (identifier || "").trim();
-      const isEmail = cleanIdent.includes("@");
-      const isPhone = /^\d+$/.test(cleanIdent);
-      let derivedFirst = "Dhanshri";
+    // Always set the exact phone/email entered by the user
+    if (isPhone) {
+      userToUse.phone = digitsOnly;
+    } else if (isEmail) {
+      userToUse.email = cleanIdent.toLowerCase();
+    }
+
+    if (!userToUse.firstName) {
+      let derivedFirst = "Patient";
       if (!isEmail && !isPhone && cleanIdent.length > 0) {
         derivedFirst = cleanIdent.split(" ")[0];
       } else if (isEmail) {
         derivedFirst = cleanIdent.split("@")[0].replace(/[._-]/g, " ");
         derivedFirst = derivedFirst.charAt(0).toUpperCase() + derivedFirst.slice(1);
+      } else if (isPhone) {
+        derivedFirst = "Member";
       }
-      userToUse = {
-        firstName: derivedFirst,
-        lastName: "",
-        email: isEmail ? cleanIdent : "dhanshri@healthmail.com",
-        phone: isPhone ? cleanIdent : "9876543210",
-        location: "Pune, Maharashtra",
-        dob: "1998-04-15",
-        age: 28,
-        isVerified: true
-      };
-      localStorage.setItem("symvella_current_user", JSON.stringify(userToUse));
+      userToUse.firstName = derivedFirst;
+      userToUse.lastName = "";
+      userToUse.dob = userToUse.dob || "1998-04-15";
+      userToUse.age = userToUse.age || 28;
+      userToUse.isVerified = true;
     }
+
+    if (location) {
+      userToUse.location = location;
+    }
+    localStorage.setItem("symvella_current_user", JSON.stringify(userToUse));
 
     const fullName = [userToUse.firstName, userToUse.lastName].filter(Boolean).join(" ").trim() || userToUse.name || userToUse.firstName;
 
@@ -122,9 +150,9 @@ export function AppProvider({ children }) {
         ...prev,
         name: fullName,
         age: Number(userToUse.age) || prev.age,
-        location: userToUse.location || prev.location,
+        location: userToUse.location || location || prev.location,
         email: userToUse.email || prev.email,
-        phone: userToUse.phone || prev.phone,
+        phone: userToUse.phone || cleanIdent || prev.phone,
         dob: userToUse.dob || prev.dob
       };
       localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
@@ -177,6 +205,37 @@ export function AppProvider({ children }) {
     localStorage.removeItem("sakhi_authenticated");
     setActiveTab("home");
     setIsAuthModalOpen(false);
+  };
+
+  const updateUserLocation = (newLocation) => {
+    if (!newLocation) return;
+    const clean = newLocation.trim();
+    setUserProfile(prev => {
+      const updated = { ...prev, location: clean };
+      localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
+      return updated;
+    });
+    setCurrentUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, location: clean };
+      localStorage.setItem("symvella_current_user", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateEmergencyContact = (contact) => {
+    if (!contact) return;
+    setUserProfile(prev => {
+      const updated = {
+        ...prev,
+        emergencyContact: {
+          ...prev.emergencyContact,
+          ...contact
+        }
+      };
+      localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
+      return updated;
+    });
   };
   
   // Modals & Overlays
@@ -268,8 +327,82 @@ export function AppProvider({ children }) {
     }
   ]);
 
-  // Alarm & Escalation Simulation
+  // Persistent Daily Check-in Mobile Alarm Engine
   const [alarmEscalationStage, setAlarmEscalationStage] = useState("idle");
+  const [isAlarmRinging, setIsAlarmRinging] = useState(false);
+  const [isCheckInMuted, setIsCheckInMuted] = useState(false);
+  const [alarmSnoozeUntil, setAlarmSnoozeUntil] = useState(0);
+
+  // Stop alarm sound and modal
+  const stopAlarm = () => {
+    alarmAudioEngineInstance.stop();
+    setIsAlarmRinging(false);
+  };
+
+  // Snooze alarm for N minutes
+  const snoozeAlarm = (minutes = 10) => {
+    alarmAudioEngineInstance.stop();
+    setIsAlarmRinging(false);
+    setAlarmSnoozeUntil(Date.now() + minutes * 60 * 1000);
+  };
+
+  // Manual test trigger from Settings
+  const testTriggerAlarm = () => {
+    setAlarmSnoozeUntil(0);
+    setIsAlarmRinging(true);
+    if (!isCheckInMuted) {
+      alarmAudioEngineInstance.start(userProfile?.alarmSettings?.tone || "gentle");
+    }
+  };
+
+  // Derived check: Has the patient completed today's 1-min check-in?
+  const isTodayCheckInDone = hasCompletedTodayCheckIn(symptomLogs);
+
+  // Automated background alarm monitor (checks every 10 seconds)
+  useEffect(() => {
+    const checkScheduledAlarm = () => {
+      const alreadyDone = hasCompletedTodayCheckIn(symptomLogs);
+      
+      // If check-in is done, ensure any ringing alarm is shut off immediately!
+      if (alreadyDone) {
+        if (isAlarmRinging) {
+          stopAlarm();
+        }
+        return;
+      }
+
+      // Check if scheduled time has passed and snooze is not active
+      const shouldRing = shouldAlarmRing({
+        symptomLogs,
+        alarmSettings: userProfile?.alarmSettings,
+        snoozeUntil: alarmSnoozeUntil
+      });
+
+      if (shouldRing && !isAlarmRinging) {
+        setIsAlarmRinging(true);
+        if (!isCheckInMuted) {
+          alarmAudioEngineInstance.start(userProfile?.alarmSettings?.tone || "gentle");
+        }
+      } else if (!shouldRing && isAlarmRinging) {
+        stopAlarm();
+      }
+    };
+
+    checkScheduledAlarm();
+    const timer = setInterval(checkScheduledAlarm, 10000);
+    return () => clearInterval(timer);
+  }, [symptomLogs, userProfile?.alarmSettings, alarmSnoozeUntil, isAlarmRinging, isCheckInMuted]);
+
+  // Synchronize audio engine with mute toggle
+  useEffect(() => {
+    if (isAlarmRinging) {
+      if (isCheckInMuted) {
+        alarmAudioEngineInstance.stop();
+      } else {
+        alarmAudioEngineInstance.start();
+      }
+    }
+  }, [isCheckInMuted, isAlarmRinging]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "blossom-rows");
@@ -324,7 +457,11 @@ export function AppProvider({ children }) {
   };
 
   // Add a new symptom log entry & generate daily report
+  // AUTOMATICALLY SILENCES AND COMPLETES DAILY CHECK-IN ALARM!
   const addSymptomLog = (newLog) => {
+    // 1. Immediately silence and deactivate persistent alarm
+    stopAlarm();
+
     const formatted = {
       date: new Date().toISOString().split("T")[0],
       cycleDay: (symptomLogs.length % 28) + 1,
@@ -394,12 +531,15 @@ export function AppProvider({ children }) {
         login,
         signup,
         logout,
+        updateUserLocation,
+        updateEmergencyContact,
         activeTab,
         setActiveTab,
         userProfile,
         setUserProfile,
         language,
         setLanguage,
+        t,
         symptomLogs,
         addSymptomLog,
         periodHistory,
@@ -420,6 +560,14 @@ export function AppProvider({ children }) {
         setIsChatOpen,
         alarmEscalationStage,
         setAlarmEscalationStage,
+        isAlarmRinging,
+        setIsAlarmRinging,
+        isCheckInMuted,
+        setIsCheckInMuted,
+        stopAlarm,
+        snoozeAlarm,
+        testTriggerAlarm,
+        isTodayCheckInDone,
         playChime,
         speakText,
         stopSpeechPlayback

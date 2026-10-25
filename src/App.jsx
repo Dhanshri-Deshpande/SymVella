@@ -6,6 +6,7 @@ import SOSModal from "./components/SOSModal";
 import FloatingChatbot from "./components/FloatingChatbot";
 import DailyReportModal from "./components/DailyReportModal";
 import PeriodDateModal from "./components/PeriodDateModal";
+import PersistentAlarmModal from "./components/PersistentAlarmModal";
 import AuthModal from "./views/AuthModal";
 
 import HomeDashboard from "./views/HomeDashboard";
@@ -24,6 +25,19 @@ function MainContent() {
     isAuthModalOpen,
     setIsAuthModalOpen
   } = useApp();
+
+  // Enforce Symvella branding on browser tab title and favicon
+  React.useEffect(() => {
+    document.title = "Symvella – Multilingual Women's Health & Cycle Intelligence";
+    let link = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.head.appendChild(link);
+    }
+    link.type = "image/png";
+    link.href = "/logo.png";
+  }, []);
 
   // 1. If not authenticated, open the Login / Sign Up screen FIRST
   if (!isAuthenticated) {
@@ -57,6 +71,7 @@ function MainContent() {
         onClose={() => setIsDailyReportOpen(false)}
       />
       <SOSModal />
+      <PersistentAlarmModal />
       {isAuthModalOpen && (
         <AuthModal 
           isOpen={isAuthModalOpen}

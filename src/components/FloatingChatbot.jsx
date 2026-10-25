@@ -45,23 +45,38 @@ import {
   resetTokenUsage 
 } from "../services/gnaniService";
 import { generateRAGResponse } from "../services/ragService";
+import ChatFormattedMessage from "./ChatFormattedMessage";
 
 export default function FloatingChatbot() {
-  const { language, setLanguage, userProfile, speakText, isChatOpen, setIsChatOpen } = useApp();
+  const { language, setLanguage, userProfile, speakText, isChatOpen, setIsChatOpen, t } = useApp();
 
   const [messages, setMessages] = useState([
     {
       id: "m_init",
       sender: "sakhi",
-      text: language === "hi" 
-        ? "नमस्ते! मैं आपकी स्वास्थ्य साथी (Symvella) हूँ। आप मुझसे माहवारी, पीरियड्स के दर्द, पीसीओएस (PCOS), नींद, या किसी भी स्वास्थ्य चिंता के बारे में अपनी भाषा में पूछ सकती हैं।"
-        : language === "hinglish"
-        ? "Namaste! Main aapki health companion Symvella hoon. Period pain, cycle dates, PCOS ya mood swings ke baare mein freely pooch sakti hain. I'm here to help!"
-        : "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language.",
+      text: t("chat.greeting", "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language."),
       timestamp: "Just now",
       source: "Clinical Companion Standard"
     }
   ]);
+
+  // Dynamically update greeting when language changes
+  useEffect(() => {
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].id === "m_init") {
+        return [
+          {
+            id: "m_init",
+            sender: "sakhi",
+            text: t("chat.greeting", "Hello! I am Symvella, your multilingual health companion. Feel free to ask about your cycle, pain relief, PCOS, or recent symptoms in your preferred language."),
+            timestamp: "Just now",
+            source: "Clinical Companion Standard"
+          }
+        ];
+      }
+      return prev;
+    });
+  }, [language, t]);
 
   const [inputVal, setInputVal] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -163,10 +178,8 @@ export default function FloatingChatbot() {
       recognition.continuous = false;
       recognition.interimResults = false;
       
-      if (language === "hi") recognition.lang = "hi-IN";
-      else if (language === "ta") recognition.lang = "ta-IN";
-      else if (language === "mr") recognition.lang = "mr-IN";
-      else recognition.lang = "en-IN";
+      const langMap = { hi: "hi-IN", mr: "mr-IN", ta: "ta-IN", hinglish: "hi-IN", en: "en-IN" };
+      recognition.lang = langMap[language] || "en-IN";
 
       recognition.onstart = () => setIsListening(true);
       recognition.onend = () => setIsListening(false);
@@ -296,9 +309,6 @@ export default function FloatingChatbot() {
                   <h4 className="font-bold text-sm leading-none">Symvella Companion</h4>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
-                <span className="text-[10px] text-pink-100 flex items-center gap-1 font-medium">
-                  <Zap className="w-2.5 h-2.5 text-amber-300" /> Model: {gnaniModel || "Gnani Prisma V2.5"}
-                </span>
               </div>
             </div>
 
@@ -503,75 +513,13 @@ export default function FloatingChatbot() {
                         ? "bg-[var(--color-primary)] text-white rounded-br-xs"
                         : m.isAlert
                         ? "bg-rose-50 text-rose-950 border border-rose-300 rounded-bl-xs"
-                        : "bg-white text-gray-800 border border-[var(--color-border)] rounded-bl-xs"
+                        : "bg-white text-gray-800 border border-purple-100 rounded-bl-xs"
                     }`}
                   >
-                    <p className="whitespace-pre-line">{m.text}</p>
-                    
-                    {/* RAG Retrieved Medical Literature Evidence Drawer */}
-                    {!isUser && m.retrievedDocs && m.retrievedDocs.length > 0 && (
-                      <div className="mt-2.5 pt-2 border-t border-purple-100">
-                        <button
-                          type="button"
-                          onClick={() => toggleSourceExpansion(m.id)}
-                          className="w-full flex items-center justify-between text-[10px] font-semibold text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1.5 rounded-lg border border-purple-200 transition-colors cursor-pointer"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <BookOpen className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                            <span>RAG Sources ({m.retrievedDocs.length} Verified Guidelines)</span>
-                            <span className="bg-purple-200 text-purple-800 px-1.5 py-0.2 rounded text-[9px] font-mono">
-                              {m.ragConfidence ? `${Math.round(m.ragConfidence * 100)}% match` : "Verified"}
-                            </span>
-                          </span>
-                          <span className="text-purple-600 font-bold">{expandedSources[m.id] ? "▲" : "▼"}</span>
-                        </button>
-
-                        {expandedSources[m.id] && (
-                          <div className="mt-2 space-y-1.5 animate-in fade-in">
-                            {m.retrievedDocs.map((doc, dIdx) => (
-                              <div key={dIdx} className="p-2 rounded-lg bg-white border border-purple-150 text-[10px] space-y-1 shadow-2xs">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-bold text-purple-950 flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                                    {doc.organization}
-                                  </span>
-                                  <span className="text-[9px] font-mono px-1 rounded bg-purple-100 text-purple-800">
-                                    {doc.confidencePct ? `${doc.confidencePct}% match` : doc.year}
-                                  </span>
-                                </div>
-                                <p className="font-semibold text-gray-800 text-[10px] leading-tight">
-                                  {doc.title}
-                                </p>
-                                <p className="text-[9px] text-gray-500 italic">
-                                  {doc.citation}
-                                </p>
-                                {doc.keyTakeaways && doc.keyTakeaways.length > 0 && (
-                                  <div className="text-[9px] text-gray-600 pt-1 border-t border-gray-100">
-                                    <strong>Evidence Finding:</strong> {doc.keyTakeaways[0]}
-                                  </div>
-                                )}
-                                {doc.url && (
-                                  <a
-                                    href={doc.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[9px] text-purple-600 hover:text-purple-800 underline flex items-center gap-0.5 pt-0.5"
-                                  >
-                                    View Official Guideline ↗
-                                  </a>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <ChatFormattedMessage content={m.text} isUser={isUser} />
 
                     {!isUser && (
-                      <div className="mt-2 pt-1.5 border-t border-black/5 flex items-center justify-between text-[10px] text-gray-500">
-                        <span className="inline-flex items-center gap-1 font-medium text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 text-[9px]">
-                          <Zap className="w-2.5 h-2.5 text-purple-600 shrink-0" /> Gnani Prisma V2.5 • Proper Script
-                        </span>
+                      <div className="mt-2 pt-1.5 border-t border-black/5 flex items-center justify-end text-[10px] text-gray-500">
                         <button
                           onClick={() => handlePlaySpeech(m.text, m.id)}
                           className={`transition-colors flex items-center gap-1 font-semibold cursor-pointer ${
@@ -689,12 +637,10 @@ export default function FloatingChatbot() {
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder={
                 isListening 
-                  ? "Listening to your voice... Tap mic to stop" 
+                  ? t("chat.listening", "Listening to your voice... Tap mic to stop") 
                   : isTranscribing
-                  ? "Gnani Prisma is transcribing..."
-                  : language === "hi" 
-                  ? "लक्षण या सवाल पूछें..." 
-                  : "Ask Symvella anything about cycles or health..."
+                  ? t("chat.transcribing", "Gnani Prisma is transcribing...")
+                  : t("chat.placeholder", "Ask Symvella anything about cycles or health...")
               }
               className="flex-1 bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"
             />
@@ -706,12 +652,6 @@ export default function FloatingChatbot() {
             >
               <Send className="w-4 h-4" />
             </button>
-          </div>
-
-          {/* Disclaimer */}
-          <div className="bg-gray-50 px-3 py-1 text-[9px] text-gray-400 text-center border-t border-gray-100 flex items-center justify-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-emerald-600" />
-            <span>Symvella guides & informs; does not prescribe. Emergency: 112.</span>
           </div>
 
         </div>

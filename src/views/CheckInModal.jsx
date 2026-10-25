@@ -36,7 +36,8 @@ export default function CheckInModal() {
     setIsSOSOpen, 
     language,
     userProfile,
-    setUserProfile 
+    setUserProfile,
+    t
   } = useApp();
 
   // Active biological stage (syncs with userProfile.lifeStage)
@@ -189,9 +190,8 @@ export default function CheckInModal() {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      if (language === "hi") recognition.lang = "hi-IN";
-      else if (language === "ta") recognition.lang = "ta-IN";
-      else recognition.lang = "en-IN";
+      const langMap = { hi: "hi-IN", mr: "mr-IN", ta: "ta-IN", hinglish: "hi-IN", en: "en-IN" };
+      recognition.lang = langMap[language] || "en-IN";
 
       recognition.onstart = () => setIsListeningMic(true);
       recognition.onend = () => setIsListeningMic(false);
@@ -560,7 +560,7 @@ export default function CheckInModal() {
                 {/* User selection: On period vs Normal day */}
                 <div className="p-3.5 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border border-pink-200 space-y-2">
                   <span className="text-xs font-bold text-gray-900 block">
-                    Are you currently having your period today?
+                    {t("checkin.are_you_bleeding", "Are you currently having your period today?")}
                   </span>
                   <div className="grid grid-cols-2 gap-2">
                     <button
@@ -569,14 +569,14 @@ export default function CheckInModal() {
                         setIsOnPeriod(true);
                         if (menstrualFlow === "none") setMenstrualFlow("medium");
                       }}
-                      className={`p-3 rounded-xl border text-center flex items-center justify-center gap-2 font-bold transition-all ${
+                      className={`p-3 rounded-xl border text-center flex items-center justify-center gap-2 font-bold transition-all cursor-pointer ${
                         isOnPeriod
                           ? "border-rose-500 bg-rose-500 text-white shadow-sm"
                           : "border-gray-200 bg-white text-gray-700 hover:border-rose-300"
                       }`}
                     >
                       <span>🔴</span>
-                      <span className="text-xs">Yes, On Period</span>
+                      <span className="text-xs">{t("checkin.yes", "Yes")}, {t("checkin.step_menstrual", "On Period")}</span>
                     </button>
 
                     <button
@@ -586,14 +586,14 @@ export default function CheckInModal() {
                         setMenstrualFlow("none");
                         setPainIntensity(0);
                       }}
-                      className={`p-3 rounded-xl border text-center flex items-center justify-center gap-2 font-bold transition-all ${
+                      className={`p-3 rounded-xl border text-center flex items-center justify-center gap-2 font-bold transition-all cursor-pointer ${
                         !isOnPeriod
                           ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white shadow-sm"
                           : "border-gray-200 bg-white text-gray-700 hover:border-purple-300"
                       }`}
                     >
                       <span>✨</span>
-                      <span className="text-xs">No, Normal Day</span>
+                      <span className="text-xs">{t("checkin.no", "No")}, Normal Day</span>
                     </button>
                   </div>
                 </div>
@@ -1344,9 +1344,9 @@ export default function CheckInModal() {
           {step > 1 ? (
             <button
               onClick={() => setStep(prev => prev - 1)}
-              className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 flex items-center gap-1"
+              className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 text-xs font-semibold hover:bg-gray-50 flex items-center gap-1 cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" /> Back
+              <ArrowLeft className="w-4 h-4" /> {t("checkin.back", "Back")}
             </button>
           ) : (
             <div />
@@ -1355,16 +1355,16 @@ export default function CheckInModal() {
           {step < totalSteps ? (
             <button
               onClick={() => setStep(prev => prev + 1)}
-              className="px-5 py-2.5 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white text-xs font-bold flex items-center gap-1 shadow-md"
+              className="px-5 py-2.5 rounded-xl bg-[var(--color-primary)] hover:opacity-95 text-white text-xs font-bold flex items-center gap-1 shadow-md cursor-pointer"
             >
-              Continue <ArrowRight className="w-4 h-4" />
+              {t("checkin.next", "Continue")} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               onClick={handleFinish}
-              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-md"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-md cursor-pointer"
             >
-              Complete Check-in ✨
+              {t("checkin.submit", "Complete Check-in ✨")}
             </button>
           )}
         </div>

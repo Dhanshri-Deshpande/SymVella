@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 export default function InfoHubView() {
-  const { speakText, language } = useApp();
+  const { speakText, language, t } = useApp();
   
   // 3 Primary Tabs in Info Hub
   const [hubTab, setHubTab] = useState("articles"); // "articles", "books", "schemes"
@@ -76,13 +76,13 @@ export default function InfoHubView() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900">Women's Health Knowledge & Resources</h2>
+                <h2 className="text-xl font-bold text-gray-900">{t("info_hub.header_title", "Women's Health Knowledge & Resources")}</h2>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Doctor Verified
+                  {t("info_hub.doctor_verified", "Doctor Verified")}
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                Medical articles, pregnancy & hormone books, and government maternity welfare schemes
+                {t("info_hub.subtitle", "Medical articles, pregnancy & hormone books, and government maternity welfare schemes")}
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function InfoHubView() {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search pregnancy books, PCOS guides, PMMVY scheme, breast health, anemia..."
+            placeholder={t("info_hub.search_placeholder", "Search pregnancy books, PCOS guides, PMMVY scheme, breast health, anemia...")}
             className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--color-primary)] rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-gray-800 focus:outline-none transition-colors"
           />
         </div>
@@ -104,38 +104,38 @@ export default function InfoHubView() {
         <div className="grid grid-cols-3 gap-2 mt-5 border-t border-gray-100 pt-4">
           <button
             onClick={() => setHubTab("articles")}
-            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border ${
+            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border cursor-pointer ${
               hubTab === "articles"
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
                 : "bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
             }`}
           >
             <FileText className="w-4 h-4" />
-            <span>Health Articles ({INFO_HUB_ARTICLES.length})</span>
+            <span>{t("info_hub.tab_articles", "Clinical Articles")} ({INFO_HUB_ARTICLES.length})</span>
           </button>
 
           <button
             onClick={() => setHubTab("books")}
-            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border ${
+            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border cursor-pointer ${
               hubTab === "books"
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
                 : "bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
             }`}
           >
             <BookMarked className="w-4 h-4" />
-            <span>Pregnancy Books ({RECOMMENDED_BOOKS.length})</span>
+            <span>{t("info_hub.tab_books", "Recommended Books")} ({RECOMMENDED_BOOKS.length})</span>
           </button>
 
           <button
             onClick={() => setHubTab("schemes")}
-            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border ${
+            className={`py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border cursor-pointer ${
               hubTab === "schemes"
                 ? "bg-[var(--color-primary)] text-white border-[var(--color-primary)] shadow-md"
                 : "bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200"
             }`}
           >
             <Landmark className="w-4 h-4" />
-            <span>Govt Schemes ({GOVERNMENT_HEALTH_SCHEMES.length})</span>
+            <span>{t("info_hub.tab_schemes", "Government Schemes")} ({GOVERNMENT_HEALTH_SCHEMES.length})</span>
           </button>
         </div>
       </div>

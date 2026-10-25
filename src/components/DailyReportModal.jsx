@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export default function DailyReportModal({ reportData, isOpen, onClose }) {
-  const { speakText, language, setIsSOSOpen } = useApp();
+  const { speakText, language, setIsSOSOpen, t } = useApp();
   const [showBiomarkerDetails, setShowBiomarkerDetails] = useState(false);
 
   if (!isOpen || !reportData) return null;
@@ -50,7 +50,7 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
                 <span className="text-xs text-gray-400 font-mono">{date}</span>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-0.5">
-                {language === "hi" ? "दैनिक स्वास्थ्य रिपोर्ट व उपचार परामर्श 🌸" : "Daily Health Findings & Care Guidance 🌸"}
+                {t("report_modal.title")}
               </h3>
             </div>
           </div>
@@ -89,7 +89,7 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-[var(--color-primary)]" />
-              {language === "hi" ? "नैदानिक निष्कर्ष व शारीरिक संकेतक" : "Clinical Findings & Physiological Indicators"}
+              {t("report_modal.findings_heading")}
             </h4>
             <button
               onClick={() => speakText(audioSummary, language)}
@@ -97,7 +97,7 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
               title="Listen to clinical summary"
             >
               <Volume2 className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-              <span>Listen</span>
+              <span>{t("report_modal.listen")}</span>
             </button>
           </div>
           <ul className="space-y-2 pt-1">
@@ -116,14 +116,14 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[var(--color-primary)]" />
               <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                Contributing Biomarkers & Clinical Severity
+                {t("report_modal.biomarkers_heading")}
               </span>
             </div>
             <button
               onClick={() => setShowBiomarkerDetails(!showBiomarkerDetails)}
               className="text-xs font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-1"
             >
-              <span>{showBiomarkerDetails ? "Hide Details" : "View Biomarker Impact"}</span>
+              <span>{showBiomarkerDetails ? t("report_modal.hide_impact") : t("report_modal.view_impact")}</span>
               {showBiomarkerDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
           </div>
@@ -131,15 +131,15 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
           {/* Clinical Severity Gauges */}
           <div className="grid grid-cols-3 gap-2 text-center text-xs">
             <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100">
-              <span className="text-[10px] text-gray-500 block font-medium">Pelvic Discomfort</span>
+              <span className="text-[10px] text-gray-500 block font-medium">{t("report_modal.pelvic_discomfort")}</span>
               <span className="font-bold text-[var(--color-primary)] font-mono text-sm">{mlMetrics?.dysmenorrheaScore || 0}%</span>
             </div>
             <div className="p-2.5 rounded-xl bg-rose-50/70 border border-rose-100">
-              <span className="text-[10px] text-gray-500 block font-medium">Ferritin Depletion</span>
+              <span className="text-[10px] text-gray-500 block font-medium">{t("report_modal.ferritin_depletion")}</span>
               <span className="font-bold text-rose-700 font-mono text-sm">{mlMetrics?.anemiaScore || 0}%</span>
             </div>
             <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
-              <span className="text-[10px] text-gray-500 block font-medium">Clinical Triage</span>
+              <span className="text-[10px] text-gray-500 block font-medium">{t("report_modal.cycle_instability")}</span>
               <span className="font-bold text-emerald-700 font-mono text-sm">{mlMetrics?.triageScore || 0}%</span>
             </div>
           </div>
@@ -188,11 +188,11 @@ export default function DailyReportModal({ reportData, isOpen, onClose }) {
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
               <Leaf className="w-4 h-4 text-emerald-600" />
-              {language === "hi" ? "प्रमाणित घरेलू देखभाल व समग्र उपचार" : "Targeted Home Care & Holistic Regimens"}
+              {t("report_modal.home_care_heading")}
             </h4>
             <span className="text-[10px] text-gray-500 font-medium flex items-center gap-1 bg-gray-100 px-2.5 py-0.5 rounded-full">
               <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-              Clinically Stratified
+              {t("report_modal.stratified")}
             </span>
           </div>
 

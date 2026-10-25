@@ -3,10 +3,7 @@ import { useApp } from "../context/AppContext";
 import { 
   Sparkles, 
   Flame, 
-  Volume2, 
   ArrowRight, 
-  Stethoscope, 
-  ChevronRight,
   Leaf,
   Droplet,
   Plus
@@ -37,7 +34,8 @@ export default function HomeDashboard() {
     language,
     setIsChatOpen,
     setIsDailyReportOpen,
-    setIsPeriodModalOpen
+    setIsPeriodModalOpen,
+    t
   } = useApp();
 
   const displayName = [currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(" ").trim() 
@@ -57,12 +55,6 @@ export default function HomeDashboard() {
     });
   };
 
-  const dailyTip = {
-    title: "Gentle Magnesium & Hydration Boost",
-    description: "In the late luteal phase, progesterone declines. A warm cup of chamomile tea or roasted pumpkin seeds helps relieve muscle tension and promote restorative sleep.",
-    audioText: "Today's tip: You are in your late luteal phase. A warm cup of chamomile tea and roasted pumpkin seeds helps relieve muscle tension."
-  };
-
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-300">
       
@@ -72,36 +64,36 @@ export default function HomeDashboard() {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> Symvella Daily Companion
+                <Sparkles className="w-3.5 h-3.5" /> {t("home.companion_badge", "Symvella Daily Companion")}
               </span>
               <button 
                 onClick={triggerStreakCelebration}
                 className="px-3 py-1 rounded-full bg-amber-400/30 text-amber-200 border border-amber-300/40 text-xs font-bold flex items-center gap-1 hover:bg-amber-400/40 transition-colors"
               >
-                <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" /> 14-Day Streak
+                <Flame className="w-3.5 h-3.5 text-amber-300 fill-amber-300" /> {t("home.streak", "14-Day Streak")}
               </button>
             </div>
             
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
-              Namaste, {displayName} 🌸
+              {t("home.greeting", "Namaste")}, {displayName} 🌸
             </h2>
             <p className="text-pink-100/90 text-sm max-w-lg leading-relaxed">
-              Your body is currently in the <strong>Late Luteal Phase</strong> (Day {cycleDay} of {userProfile.cycleLength}). Today's check-in takes only 90 seconds.
+              {t("home.status_lead", "Your body is currently in the")} <strong>{t("home.phase_luteal", "Late Luteal Phase")}</strong> ({t("home.day_count", { day: cycleDay, total: userProfile.cycleLength })}). {t("home.checkin_prompt", "Today's check-in takes only 90 seconds.")}
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2.5">
               <button
                 onClick={() => setIsCheckInOpen(true)}
-                className="px-5 py-2.5 rounded-2xl bg-white text-[var(--color-primary-dark)] font-bold text-sm shadow-md hover:bg-pink-50 active:scale-95 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 rounded-2xl bg-white text-[var(--color-primary-dark)] font-bold text-sm shadow-md hover:bg-pink-50 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
               >
-                Start 1-Min Check-in <ArrowRight className="w-4 h-4" />
+                {t("home.start_checkin", "Start 1-Min Check-in")} <ArrowRight className="w-4 h-4" />
               </button>
 
               <button
                 onClick={() => setIsDailyReportOpen(true)}
-                className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-medium text-sm border border-white/20 transition-all flex items-center gap-2"
+                className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md text-white font-medium text-sm border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <Leaf className="w-4 h-4 text-emerald-300" /> Today's Gharelu Upay
+                <Leaf className="w-4 h-4 text-emerald-300" /> {t("home.todays_remedies", "Today's Gharelu Upay")}
               </button>
             </div>
           </div>
@@ -124,11 +116,11 @@ export default function HomeDashboard() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-2xl font-black">Day {cycleDay}</span>
+                <span className="text-xl font-black">Day {cycleDay}</span>
                 <span className="text-[10px] text-pink-200 uppercase font-medium">of {userProfile.cycleLength}</span>
               </div>
             </div>
-            <p className="text-xs font-semibold text-white">Next Period in ~6 Days</p>
+            <p className="text-xs font-semibold text-white">{t("home.next_period", "Next Period in")} ~6 {t("home.days_unit", "Days")}</p>
             <p className="text-[11px] text-pink-200">Predicted: Nov 1, 2026</p>
           </div>
         </div>
@@ -143,24 +135,24 @@ export default function HomeDashboard() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary-dark)] uppercase">
-                Menstrual Timeline
+                {t("home.timeline_badge", "Menstrual Timeline")}
               </span>
-              <span className="text-xs text-gray-400 font-mono">From Starting to Till Date</span>
+              <span className="text-xs text-gray-400 font-mono">{t("home.timeline_sub", "From Starting to Till Date")}</span>
             </div>
             <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
               <Droplet className="w-5 h-5 text-rose-500 fill-rose-500" />
-              Period Dates & Cycle Length History
+              {t("home.timeline_title", "Period Dates & Cycle History")}
             </h3>
             <p className="text-xs text-gray-500">
-              Track cycle length variations, past dates, and ovulation patterns over time
+              {t("home.timeline_desc", "Track cycle length variations, past dates, and ovulation patterns over time")}
             </p>
           </div>
 
           <button
             onClick={() => setIsPeriodModalOpen(true)}
-            className="px-4 py-2.5 rounded-2xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all self-start sm:self-auto"
+            className="px-4 py-2.5 rounded-2xl bg-[var(--color-primary)] hover:opacity-95 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all self-start sm:self-auto cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Log Period Dates
+            <Plus className="w-4 h-4" /> {t("home.log_period_btn", "+ Log Period Dates")}
           </button>
         </div>
 
@@ -178,7 +170,7 @@ export default function HomeDashboard() {
               <YAxis 
                 domain={[20, 42]} 
                 tick={{ fontSize: 11, fill: "#69577D" }}
-                label={{ value: "Days", angle: -90, position: "insideLeft", fill: "#999", fontSize: 10 }}
+                label={{ value: t("home.days_unit", "Days"), angle: -90, position: "insideLeft", fill: "#999", fontSize: 10 }}
               />
               <Tooltip 
                 content={({ active, payload }) => {
@@ -197,9 +189,9 @@ export default function HomeDashboard() {
                   return null;
                 }}
               />
-              <ReferenceLine y={28} stroke="#EE9FE1" strokeDasharray="3 3" label={{ value: "Standard 28d", fill: "#965293", fontSize: 10, position: "insideTopRight" }} />
-              <ReferenceLine y={35} stroke="#E83674" strokeDasharray="2 2" label={{ value: "Irregularity Limit (35d)", fill: "#E83674", fontSize: 10, position: "insideTopRight" }} />
-              <Bar dataKey="cycleLength" name="Cycle Length (Days)" radius={[8, 8, 0, 0]}>
+              <ReferenceLine y={28} stroke="#EE9FE1" strokeDasharray="3 3" label={{ value: t("home.standard_label", "Standard 28d"), fill: "#965293", fontSize: 10, position: "insideTopRight" }} />
+              <ReferenceLine y={35} stroke="#E83674" strokeDasharray="2 2" label={{ value: t("home.irregular_label", "Irregularity Limit (35d)"), fill: "#E83674", fontSize: 10, position: "insideTopRight" }} />
+              <Bar dataKey="cycleLength" name={t("home.cycle_axis", "Cycle Length (Days)")} radius={[8, 8, 0, 0]}>
                 {periodHistory.map((entry, index) => (
                   <Cell 
                     key={`cell-${index}`} 
@@ -222,92 +214,16 @@ export default function HomeDashboard() {
         <div className="flex flex-wrap items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500 gap-2">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#965293]" /> Normal Cycle (28-34d)
+              <span className="w-3 h-3 rounded-md bg-[#965293]" /> {t("home.normal_cycle", "Normal Cycle (28-34d)")}
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#3B2E58]" /> Delayed Cycle (35d+)
+              <span className="w-3 h-3 rounded-md bg-[#3B2E58]" /> {t("home.delayed_cycle", "Delayed Cycle (35d+)")}
             </span>
           </div>
           <span className="text-[11px] font-medium text-[var(--color-primary)]">
-            Tap "+ Log Period Dates" to add your next cycle dates anytime.
+            {t("home.history_tip", 'Tap "+ Log Period Dates" to add your next cycle dates anytime.')}
           </span>
         </div>
-      </div>
-
-      {/* Grid: Daily Tip + Explainable AI Alert preview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        
-        {/* Daily Personalized Wellness Tip */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-[var(--color-border)] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 flex items-center gap-1.5 border border-emerald-200">
-                <Sparkles className="w-3.5 h-3.5" /> Daily Science-Backed Tip
-              </span>
-              <button
-                onClick={() => speakText(dailyTip.audioText, language)}
-                className="p-1.5 rounded-xl bg-gray-100 hover:bg-pink-100 text-gray-600 hover:text-[var(--color-primary)] transition-colors"
-                title="Listen to audio explainer"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-            </div>
-            <h3 className="text-base font-bold text-gray-900 mb-2">{dailyTip.title}</h3>
-            <p className="text-xs text-gray-600 leading-relaxed">{dailyTip.description}</p>
-          </div>
-          
-          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-            <span>Reviewed by Clinical Nutritionist</span>
-            <button 
-              onClick={() => setActiveTab("info")} 
-              className="font-semibold text-[var(--color-primary)] hover:underline flex items-center gap-0.5"
-            >
-              Browse Info Hub <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Explainable AI Pattern Screening Highlight */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-[var(--color-border)] flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--color-badge-bg)] text-[var(--color-primary)] flex items-center gap-1.5 border border-[var(--color-border)]">
-                <Stethoscope className="w-3.5 h-3.5" /> Clinical Pattern Assessment
-              </span>
-              <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                Moderate Risk Profile
-              </span>
-            </div>
-            <h3 className="text-base font-bold text-gray-900 mb-1">
-              Ovulatory Irregularity & PCOS Phenotype
-            </h3>
-            <p className="text-xs text-gray-600 mb-3">
-              Cycle length variability recorded at <strong>±11 days</strong> with recurring luteal acne and afternoon fatigue.
-            </p>
-
-            {/* Clinical Indicator Bar Preview */}
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between text-[11px] text-gray-500">
-                <span>Cycle Length Variance (Primary Clinical Indicator)</span>
-                <span className="font-semibold text-[var(--color-primary)]">+42% clinical weight</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div className="bg-[var(--color-primary)] h-2 rounded-full" style={{ width: "42%" }} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400">Diagnostic Concordance: High (FOGSI Aligned)</span>
-            <button
-              onClick={() => setActiveTab("reports")}
-              className="text-xs font-bold text-[var(--color-primary)] hover:underline flex items-center gap-1"
-            >
-              View Full Clinical Report <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
       </div>
 
     </div>
