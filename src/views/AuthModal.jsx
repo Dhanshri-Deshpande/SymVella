@@ -545,7 +545,7 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Sharma"
+                    placeholder="Optional"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"

@@ -18,7 +18,7 @@ export default function AshaDashboardView() {
   const [beneficiaries, setBeneficiaries] = useState([
     {
       id: "ASHA-01",
-      name: "Pooja Sharma",
+      name: "Pooja Patil",
       age: 26,
       village: "Rampur Sub-Centre",
       status: "PCOS Tendency Flagged",

@@ -97,6 +97,10 @@ export function AppProvider({ children }) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed && (parsed.firstName || parsed.name)) {
+          // If lastName was previously "Sharma", clear it so no default surname persists
+          if (parsed.lastName === "Sharma") {
+            parsed.lastName = "";
+          }
           return parsed;
         }
       } catch (e) {}
@@ -121,6 +125,9 @@ export function AppProvider({ children }) {
       try {
         base = { ...base, ...JSON.parse(savedProfile) };
       } catch (e) {}
+    }
+    if (base.name === "Pooja Sharma") {
+      base.name = "Pooja";
     }
     const savedUser = localStorage.getItem("symvella_current_user") || localStorage.getItem("sakhi_current_user");
     if (savedUser) {
@@ -250,9 +257,13 @@ export function AppProvider({ children }) {
   };
 
   const signup = (userData) => {
-    const fullName = [userData.firstName, userData.lastName].filter(Boolean).join(" ").trim() || userData.firstName;
+    const cleanFirst = (userData.firstName || "").trim();
+    const cleanLast = (userData.lastName || "").trim();
+    const fullName = cleanLast ? `${cleanFirst} ${cleanLast}` : cleanFirst;
     const registeredUser = {
       ...userData,
+      firstName: cleanFirst,
+      lastName: cleanLast,
       name: fullName
     };
 

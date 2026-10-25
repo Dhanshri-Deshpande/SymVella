@@ -1,7 +1,7 @@
 // Realistic 30-day historical data for Symvella prototype demonstrations
 
 export const INITIAL_USER_PROFILE = {
-  name: "Pooja Sharma",
+  name: "Pooja",
   age: 26,
   lifeStage: "regular", // "regular", "pcos", "ttc", "pregnancy", etc.
   cycleLength: 32,

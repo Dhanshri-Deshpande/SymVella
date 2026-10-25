@@ -164,7 +164,7 @@ export default function SettingsView() {
               <User className="w-3 h-3 text-[var(--color-primary)]" /> Registered Patient Name
             </span>
             <span className="font-bold text-gray-900 text-sm">
-              {currentUser?.firstName || "Pooja"} {currentUser?.lastName || "Sharma"}
+              {[currentUser?.firstName, currentUser?.lastName].filter(Boolean).join(" ").trim() || currentUser?.name || userProfile?.name || "Patient"}
             </span>
           </div>
 
@@ -184,7 +184,7 @@ export default function SettingsView() {
               <Mail className="w-3 h-3 text-[var(--color-primary)]" /> Email (OTP Verified)
             </span>
             <span className="font-bold text-gray-900 text-sm truncate block" title={currentUser?.email}>
-              {currentUser?.email || "pooja.sharma@healthmail.com"}
+              {currentUser?.email || "patient@healthmail.com"}
             </span>
           </div>
 
