@@ -13,34 +13,19 @@ import {
   VolumeX, 
   Heart, 
   Sparkles, 
-  AlertCircle, 
-  ShieldCheck, 
-  Settings, 
-  RefreshCw,
-  Cpu,
-  Zap,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  RotateCcw,
-  Radio,
   Loader2,
   BookOpen,
   ExternalLink
 } from "lucide-react";
 import { 
   getSavedGnaniConfig, 
-  saveGnaniConfig, 
   callGnaniLLM, 
   callGeminiGenerativeAI,
   synthesizeGnaniSpeech,
   stopSpeechPlayback,
   transcribeWithGnaniSTT,
   startMicrophoneRecording,
-  stopMicrophoneRecording,
-  testGnaniConnection, 
-  GNANI_TOKEN_LIMIT, 
-  resetTokenUsage 
+  stopMicrophoneRecording
 } from "../services/gnaniService";
 import { generateRAGResponse } from "../services/ragService";
 import ChatFormattedMessage from "../components/ChatFormattedMessage";
@@ -86,28 +71,11 @@ export default function SymvellaChat() {
     setExpandedSources(prev => ({ ...prev, [msgId]: !prev[msgId] }));
   };
   const [isTyping, setIsTyping] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
   
-  // Exclusively Gnani.ai Model Configuration & Token Tracking
-  const [gnaniApiKey, setGnaniApiKey] = useState(() => getSavedGnaniConfig().apiKey);
-  const [gnaniModel, setGnaniModel] = useState(() => getSavedGnaniConfig().model || "Gnani Prisma V2.5");
-  const [gnaniVoice, setGnaniVoice] = useState(() => getSavedGnaniConfig().voice || "Nalini");
-  const [gnaniTokensUsed, setGnaniTokensUsed] = useState(() => getSavedGnaniConfig().tokensUsed);
-  const [showGnaniKey, setShowGnaniKey] = useState(false);
-  const [testStatus, setTestStatus] = useState(null);
-
-  const handleTestGnani = async () => {
-    setTestStatus({ loading: true, message: "Verifying credentials with Gnani.ai..." });
-    saveGnaniConfig({ apiKey: gnaniApiKey, model: gnaniModel, voice: gnaniVoice });
-    const res = await testGnaniConnection(gnaniApiKey);
-    setTestStatus({ loading: false, success: res.success, message: res.message });
-    setTimeout(() => setTestStatus(null), 5000);
-  };
-
-  const handleResetTokens = () => {
-    resetTokenUsage();
-    setGnaniTokensUsed(0);
-  };
+  // Gnani.ai Model Configuration
+  const [gnaniApiKey] = useState(() => getSavedGnaniConfig().apiKey);
+  const [gnaniModel] = useState(() => getSavedGnaniConfig().model || "Gnani Prisma V2.5");
+  const [gnaniVoice] = useState(() => getSavedGnaniConfig().voice || "Nalini");
 
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -135,7 +103,7 @@ export default function SymvellaChat() {
             handleSend(sttRes.transcript, true);
           }
         } else {
-          alert("💡 Please configure your Gnani API key from https://app.gnani.ai/voice/speech-to-text in Engine Settings ⚙️.");
+          runBrowserSpeechFallback();
         }
       } catch (sttErr) {
         console.warn("Gnani STT notice, trying browser recognition fallback:", sttErr);
@@ -245,10 +213,6 @@ export default function SymvellaChat() {
         gnaniModel
       });
 
-      if (ragRes.totalTokensUsed) {
-        setGnaniTokensUsed(ragRes.totalTokensUsed);
-      }
-
       const botReply = {
         id: "b_" + Date.now(),
         sender: "sakhi",
@@ -296,7 +260,7 @@ export default function SymvellaChat() {
               <h3 className="font-bold text-gray-900 text-sm">Symvella Companion</h3>
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[10px] text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full font-semibold border border-purple-200 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-purple-600" /> Powered Exclusively by Gnani.ai Model
+                <Sparkles className="w-3 h-3 text-purple-600" /> AI Companion
               </span>
             </div>
             <p className="text-[11px] text-[var(--color-text-muted)] flex items-center gap-1.5">
@@ -304,190 +268,7 @@ export default function SymvellaChat() {
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowConfig(prev => !prev)}
-            className="p-2 rounded-xl bg-white hover:bg-gray-50 border border-[var(--color-border)] text-gray-600 text-xs flex items-center gap-1 transition-colors cursor-pointer"
-            title="Gnani Model Settings"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline">Gnani Model Settings</span>
-          </button>
-        </div>
       </div>
-
-      {/* Gnani AI Model Configuration Panel (Expandable) */}
-      {showConfig && (
-        <div className="p-4 bg-gray-50 border-b border-gray-200 text-xs space-y-3 animate-in fade-in">
-          <div className="p-3 bg-white rounded-xl border border-purple-200 space-y-3">
-            {/* Header with dashboard link */}
-            <div className="flex items-center justify-between pb-2 border-b border-purple-150">
-              <span className="font-bold text-purple-950 text-xs flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-purple-600" /> Gnani.ai Model Configuration
-              </span>
-              <div className="flex items-center gap-3">
-                <a
-                  href="https://app.gnani.ai/voice/speech-to-text"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-purple-600 hover:text-purple-800 text-xs font-semibold underline flex items-center gap-1 cursor-pointer"
-                  title="Open app.gnani.ai Speech to Text dashboard"
-                >
-                  app.gnani.ai/voice ↗
-                </a>
-                <button 
-                  onClick={() => setShowConfig(false)}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer text-sm"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Model specifications badge */}
-            <div className="p-2 rounded-lg bg-purple-50/70 border border-purple-150 text-xs grid grid-cols-3 gap-2 text-purple-900">
-              <div>
-                <span className="text-gray-500 block text-[10px]">Speech-to-Text Model:</span>
-                <strong className="font-mono text-purple-800">gnani-prisma-v2.5</strong> (16kHz WAV)
-              </div>
-              <div>
-                <span className="text-gray-500 block text-[10px]">Text-to-Speech Model:</span>
-                <strong className="font-mono text-purple-800">timbre-v2.5</strong> (Indic Neural Voice)
-              </div>
-              <div>
-                <span className="text-gray-500 block text-[10px]">Active Engine Model:</span>
-                <strong className="font-mono text-purple-800">{gnaniModel || "Gnani Prisma V2.5"}</strong>
-              </div>
-            </div>
-
-            {/* Token Quota Tracker */}
-            <div className="space-y-1">
-              <div className="flex justify-between items-center text-[11px]">
-                <span className="font-semibold text-purple-900 flex items-center gap-1">
-                  <Zap className="w-3.5 h-3.5 text-purple-600" /> Free Token Quota:
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-purple-800">
-                    {gnaniTokensUsed.toLocaleString()} / {GNANI_TOKEN_LIMIT.toLocaleString()} Tokens
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleResetTokens}
-                    title="Reset local counter"
-                    className="text-gray-400 hover:text-purple-600 cursor-pointer"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-              <div className="w-full bg-purple-100 h-2 rounded-full overflow-hidden">
-                <div 
-                  className={`h-2 rounded-full transition-all duration-300 ${
-                    gnaniTokensUsed >= GNANI_TOKEN_LIMIT ? "bg-rose-500" : "bg-purple-600"
-                  }`}
-                  style={{ width: `${Math.min(100, (gnaniTokensUsed / GNANI_TOKEN_LIMIT) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="text-[11px] font-bold text-gray-700 block mb-1">
-                  Gnani API Key (X-API-Key-ID):
-                </label>
-                <div className="relative">
-                  <input
-                    type={showGnaniKey ? "text" : "password"}
-                    value={gnaniApiKey}
-                    onChange={(e) => {
-                      setGnaniApiKey(e.target.value);
-                      saveGnaniConfig({ apiKey: e.target.value });
-                    }}
-                    placeholder="Paste your Gnani API key from registration email"
-                    className="w-full bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-600 rounded-lg pl-3 pr-8 py-1.5 text-xs font-mono focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowGnaniKey(!showGnaniKey)}
-                    className="absolute right-2.5 top-2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                  >
-                    {showGnaniKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-bold text-gray-700 block mb-1">Gnani Timbre Voice:</label>
-                <select
-                  value={gnaniVoice}
-                  onChange={(e) => {
-                    setGnaniVoice(e.target.value);
-                    saveGnaniConfig({ voice: e.target.value });
-                  }}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-600"
-                >
-                  <option value="Nalini">Nalini (Natural Female)</option>
-                  <option value="Radhika">Radhika (Gentle Voice)</option>
-                  <option value="Kavya">Kavya (Indic Pro)</option>
-                  <option value="Aarav">Aarav (Warm Male)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-blue-50 p-2.5 rounded-xl border border-purple-200 shadow-2xs">
-                <label className="text-[11px] font-bold text-gray-800 block mb-1">Model</label>
-                <select
-                  value={gnaniModel}
-                  onChange={(e) => {
-                    setGnaniModel(e.target.value);
-                    saveGnaniConfig({ model: e.target.value });
-                  }}
-                  className="w-full bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-800 shadow-2xs focus:outline-none focus:border-purple-600 cursor-pointer"
-                >
-                  <option value="Gnani Prisma V2.5">Gnani Prisma V2.5</option>
-                  <option value="Gnani Timbre V2.5">Gnani Timbre V2.5</option>
-                  <option value="Gnani Prisma + Timbre Suite">Gnani Prisma + Timbre Suite</option>
-                </select>
-                <p className="text-[10px] text-gray-500 mt-1 leading-snug">
-                  Transforms speech into accurate text across Indian languages
-                </p>
-              </div>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={handleTestGnani}
-                  disabled={testStatus?.loading}
-                  className="w-full py-2.5 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  {testStatus?.loading ? (
-                    <span className="animate-spin text-xs">⏳</span>
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
-                  )}
-                  <span>Test Gnani Credentials</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="p-2 rounded-lg bg-purple-50/80 text-purple-900 text-xs flex items-center gap-1.5">
-              <Radio className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-              <span>Exclusively configured: <strong>Gnani Prisma STT</strong>, <strong>Timbre TTS</strong> & <strong>Indic LLM</strong>.</span>
-            </div>
-
-            {testStatus && (
-              <div className={`p-2 rounded-lg text-xs flex items-center gap-1.5 ${
-                testStatus.success ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-rose-50 text-rose-800 border border-rose-200"
-              }`}>
-                {testStatus.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
-                <span>{testStatus.message}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Message Feed */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
