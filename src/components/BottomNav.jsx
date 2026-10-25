@@ -18,8 +18,8 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[var(--color-border)] shadow-lg no-print">
-      <div className="max-w-xl mx-auto px-6 py-2 flex items-center justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[var(--color-border)] shadow-lg no-print pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+      <div className="max-w-xl mx-auto px-2 sm:px-6 py-1.5 sm:py-2 flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -28,7 +28,7 @@ export default function BottomNav() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-4 rounded-xl transition-all cursor-pointer ${
+              className={`flex flex-col items-center justify-center py-1 px-2.5 sm:px-4 rounded-xl transition-all cursor-pointer ${
                 isActive
                   ? "text-[var(--color-primary)] font-bold scale-105"
                   : "text-gray-400 hover:text-gray-600 font-medium"

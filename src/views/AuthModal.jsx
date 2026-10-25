@@ -249,41 +249,41 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
 
   // Main Card Content
   const cardContent = (
-    <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-7 shadow-2xl border border-white/20">
+    <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-7 shadow-2xl border border-white/20">
       
       {/* Header */}
-      <div className="flex items-start justify-between pb-3.5 border-b border-gray-100 gap-2">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between pb-3 sm:pb-3.5 border-b border-gray-100 gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <img 
             src="/logo.png" 
             alt="Symvella" 
-            className="w-11 h-11 rounded-2xl object-cover shadow-md bg-white border border-purple-100" 
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl object-cover shadow-md bg-white border border-purple-100 shrink-0" 
           />
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg sm:text-xl font-black text-[var(--color-primary-dark)]">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+              <h3 className="text-base sm:text-xl font-black text-[var(--color-primary-dark)]">
                 Sym<span className="text-[var(--color-primary)]">vella</span>
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-[var(--color-primary)]">
-                {t("auth.portal_title", "Clinical Health Portal")}
+              <span className="text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full bg-purple-100 text-[var(--color-primary)] shrink-0">
+                {t("auth.portal_title", "Clinical Portal")}
               </span>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-[10px] sm:text-xs text-gray-500 truncate">
               {authMode === "login" 
-                ? t("auth.signin_desc", "Sign in to access your confidential health dashboard") 
+                ? t("auth.signin_desc", "Sign in to access your health dashboard") 
                 : t("auth.signup_desc", "Create your verified patient health profile")}
             </p>
           </div>
         </div>
 
         {/* Right side controls: Language Selector + Close button */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-purple-50 hover:bg-purple-100/80 border border-purple-200/80 rounded-xl px-2.5 py-1.5 text-xs gap-1.5 transition-colors shadow-2xs">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div className="flex items-center bg-purple-50 hover:bg-purple-100/80 border border-purple-200/80 rounded-xl px-2 py-1 sm:px-2.5 sm:py-1.5 text-xs gap-1 sm:gap-1.5 transition-colors shadow-2xs">
             <Globe className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="bg-transparent font-bold text-[var(--color-primary-dark)] text-xs focus:outline-none cursor-pointer pr-1"
+              className="bg-transparent font-bold text-[var(--color-primary-dark)] text-[11px] sm:text-xs focus:outline-none cursor-pointer pr-1"
               aria-label="Select Language"
             >
               {SYMVELLA_LANGUAGES.map((l) => (
@@ -297,9 +297,9 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
           {onClose && isAuthenticated && !isFullScreen && (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+              className="p-1 sm:p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
         </div>
@@ -364,17 +364,17 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
 
               {/* Current Address / Location (Works with GPS or manual entry) */}
               <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-semibold text-gray-800 flex items-center gap-1.5 text-xs">
-                    <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                    <span>{t("auth.address_label", "Current Address / Location (For SOS Emergency Routing) *")}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <label className="font-semibold text-gray-800 flex items-center gap-1 text-xs">
+                    <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
+                    <span>{t("auth.address_label", "Current Location / Address *")}</span>
                   </label>
                   
                   <button
                     type="button"
                     onClick={() => handleAutoDetectLocation("login")}
                     disabled={isDetectingGps}
-                    className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--color-primary)] hover:text-purple-800 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs hover:bg-purple-50 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[var(--color-primary)] hover:text-purple-800 bg-white px-2 py-1 rounded-lg border border-purple-200 shadow-2xs hover:bg-purple-50 transition-colors cursor-pointer self-start sm:self-auto"
                     title="Auto-detect exact current address using GPS"
                   >
                     {isDetectingGps ? (
@@ -382,14 +382,14 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
                     ) : (
                       <LocateFixed className="w-3 h-3 text-[var(--color-primary)]" />
                     )}
-                    <span>{isDetectingGps ? t("auth.detecting_address", "Detecting Address...") : t("auth.use_current_location", "Use Current Location")}</span>
+                    <span>{isDetectingGps ? t("auth.detecting_address", "Detecting...") : t("auth.use_current_location", "Use Current Location")}</span>
                   </button>
                 </div>
 
                 <input
                   type="text"
                   required
-                  placeholder={t("auth.address_placeholder", "Enter current street address, area, or city (e.g. Shivaji Road, Pune)")}
+                  placeholder={t("auth.address_placeholder", "Enter street, area, or city (e.g. Pune)")}
                   value={loginLocation}
                   onChange={(e) => setLoginLocation(e.target.value)}
                   className="w-full bg-white border border-gray-200 focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"
@@ -591,17 +591,17 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
 
               {/* Current Address / Location */}
               <div className="p-3 bg-purple-50/70 rounded-2xl border border-purple-200/80 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="font-semibold text-gray-800 flex items-center gap-1.5 text-xs">
-                    <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)]" />
-                    <span>{t("auth.address_label", "Current Address / Location (For SOS Emergency Routing) *")}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                  <label className="font-semibold text-gray-800 flex items-center gap-1 text-xs">
+                    <MapPin className="w-3.5 h-3.5 text-[var(--color-primary)] shrink-0" />
+                    <span>{t("auth.address_label", "Current Location / Address *")}</span>
                   </label>
                   
                   <button
                     type="button"
                     onClick={() => handleAutoDetectLocation("signup")}
                     disabled={isDetectingGps}
-                    className="inline-flex items-center gap-1 text-[10px] font-bold text-[var(--color-primary)] hover:text-purple-800 bg-white px-2.5 py-1 rounded-lg border border-purple-200 shadow-2xs hover:bg-purple-50 transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-[var(--color-primary)] hover:text-purple-800 bg-white px-2 py-1 rounded-lg border border-purple-200 shadow-2xs hover:bg-purple-50 transition-colors cursor-pointer self-start sm:self-auto"
                     title="Auto-detect exact current address using GPS"
                   >
                     {isDetectingGps ? (
@@ -609,14 +609,14 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
                     ) : (
                       <LocateFixed className="w-3 h-3 text-[var(--color-primary)]" />
                     )}
-                    <span>{isDetectingGps ? t("auth.detecting_address", "Detecting Address...") : t("auth.use_current_location", "Use Current Location")}</span>
+                    <span>{isDetectingGps ? t("auth.detecting_address", "Detecting...") : t("auth.use_current_location", "Use Current Location")}</span>
                   </button>
                 </div>
 
                 <input
                   type="text"
                   required
-                  placeholder={t("auth.address_placeholder", "Enter current street address, area, or city (e.g. Shivaji Road, Pune)")}
+                  placeholder={t("auth.address_placeholder", "Enter street, area, or city (e.g. Pune)")}
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full bg-white border border-gray-200 focus:border-[var(--color-primary)] rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none"
@@ -795,20 +795,20 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
   // Full Screen Mode
   if (isFullScreen) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#3B2E58] via-[#5C3B68] to-[#965293] flex flex-col items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+      <div className="min-h-screen bg-gradient-to-br from-[#3B2E58] via-[#5C3B68] to-[#965293] flex flex-col items-center justify-center p-3 sm:p-6 py-6 sm:py-10 animate-in fade-in duration-300">
         
         {/* Top Brand Banner */}
-        <div className="text-center mb-5 space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center justify-center gap-3">
+        <div className="text-center mb-4 sm:mb-5 space-y-1 sm:space-y-2 px-2">
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight flex items-center justify-center gap-2.5">
             <img 
               src="/logo.png" 
               alt="Symvella" 
-              className="w-12 h-12 rounded-2xl object-cover shadow-lg bg-white border border-white/20" 
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl object-cover shadow-lg bg-white border border-white/20" 
             />
             <span>Sym<span className="text-[#EE9FE1]">vella</span></span>
           </h1>
           
-          <p className="text-xs sm:text-sm text-white/80 max-w-md mx-auto">
+          <p className="text-xs sm:text-sm text-white/80 max-w-md mx-auto leading-relaxed">
             {t("nav.tagline", "A Multilingual, Explainable AI Companion for Women's Health & Clinical Intelligence")}
           </p>
         </div>
@@ -816,11 +816,11 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
         {cardContent}
 
         {/* Footer Badges */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-4 text-[11px] text-white/70">
+        <div className="mt-4 sm:mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-[10px] sm:text-[11px] text-white/70 px-2 text-center">
           <span className="flex items-center gap-1">🔒 100% Private & DPDP Compliant</span>
-          <span>•</span>
+          <span className="hidden sm:inline">•</span>
           <span className="flex items-center gap-1">🌿 Evidence-Based Clinical Care</span>
-          <span>•</span>
+          <span className="hidden sm:inline">•</span>
           <span className="flex items-center gap-1">🩺 Gynaecological Summary Ready</span>
         </div>
 
@@ -830,7 +830,7 @@ export default function AuthModal({ isOpen, onClose, isFullScreen = false }) {
 
   // Modal Mode
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2.5 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
       <div className="my-auto max-h-[92vh] overflow-y-auto w-full flex justify-center">
         {cardContent}
       </div>

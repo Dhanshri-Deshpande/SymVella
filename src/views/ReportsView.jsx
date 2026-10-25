@@ -99,7 +99,7 @@ export default function ReportsView() {
     <div className="space-y-6 pb-20 animate-in fade-in duration-300">
       
       {/* View Header with Only 2 Tabs & Download Action */}
-      <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-[var(--color-border)] no-print">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-sm border border-[var(--color-border)] no-print">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
@@ -120,7 +120,7 @@ export default function ReportsView() {
         </div>
 
         {/* EXACTLY TWO CLEAN OPTIONS: Weekly Summary & Monthly Doctor PDF */}
-        <div className="grid grid-cols-2 gap-3 mt-5 border-t border-gray-100 pt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 mt-4 sm:mt-5 border-t border-gray-100 pt-4">
           <button
             onClick={() => setReportType("weekly")}
             className={`py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 border cursor-pointer ${

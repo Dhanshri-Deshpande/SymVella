@@ -54,7 +54,7 @@ function MainContent() {
     <div className="min-h-screen bg-[var(--color-bg-soft)] text-[var(--color-text-main)]">
       <Navbar />
       
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 pb-28">
+      <main className="max-w-5xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-28">
         {activeTab === "home" && <HomeDashboard />}
         {activeTab === "reports" && <ReportsView />}
         {activeTab === "info" && <InfoHubView />}
