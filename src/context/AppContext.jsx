@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { INITIAL_USER_PROFILE, INITIAL_SYMPTOM_LOGS } from "../data/sampleData";
 import { generateDailyReport } from "../data/ghareluUpayEngine";
 import { synthesizeGnaniSpeech, stopSpeechPlayback } from "../services/gnaniService";
@@ -8,7 +8,82 @@ import {
   alarmAudioEngineInstance 
 } from "../services/alarmSchedulerService";
 import { translate } from "../data/translations";
-import { calculateCycleStatus } from "../data/cycleCalculator";
+import { predictCycleState } from "../services/cycleEngine";
+
+const DEFAULT_PERIOD_HISTORY = [
+  {
+    id: "c1",
+    cycleNum: "Cycle 1",
+    startDate: "2026-05-12",
+    endDate: "2026-05-17",
+    displayRange: "12 May – 17 May",
+    cycleLength: 30,
+    bleedingDays: 5,
+    flow: "Normal",
+    status: "Regular",
+    notes: "Mild cramping on Day 1-2"
+  },
+  {
+    id: "c2",
+    cycleNum: "Cycle 2",
+    startDate: "2026-06-12",
+    endDate: "2026-06-17",
+    displayRange: "12 Jun – 17 Jun",
+    cycleLength: 31,
+    bleedingDays: 5,
+    flow: "Normal",
+    status: "Regular",
+    notes: "Normal flow, good hydration"
+  },
+  {
+    id: "c3",
+    cycleNum: "Cycle 3",
+    startDate: "2026-07-14",
+    endDate: "2026-07-19",
+    displayRange: "14 Jul – 19 Jul",
+    cycleLength: 32,
+    bleedingDays: 5,
+    flow: "Heavy",
+    status: "Slight Delay (+2d)",
+    notes: "Heavy flow with fatigue"
+  },
+  {
+    id: "c4",
+    cycleNum: "Cycle 4",
+    startDate: "2026-08-18",
+    endDate: "2026-08-22",
+    displayRange: "18 Aug – 22 Aug",
+    cycleLength: 35,
+    bleedingDays: 4,
+    flow: "Moderate",
+    status: "Irregular (+5d)",
+    notes: "Work stress, delayed ovulation"
+  },
+  {
+    id: "c5",
+    cycleNum: "Cycle 5",
+    startDate: "2026-09-22",
+    endDate: "2026-09-27",
+    displayRange: "22 Sep – 27 Sep",
+    cycleLength: 35,
+    bleedingDays: 5,
+    flow: "Moderate",
+    status: "Irregular (+5d)",
+    notes: "Acne breakouts reported"
+  },
+  {
+    id: "c6",
+    cycleNum: "Cycle 6 (Current)",
+    startDate: "2026-10-04",
+    endDate: "2026-10-09",
+    displayRange: "04 Oct – 09 Oct",
+    cycleLength: 32,
+    bleedingDays: 5,
+    flow: "Light / Luteal",
+    status: "Active",
+    notes: "Regular flow"
+  }
+];
 
 const AppContext = createContext();
 
@@ -252,81 +327,37 @@ export function AppProvider({ children }) {
     return generateDailyReport(INITIAL_SYMPTOM_LOGS[INITIAL_SYMPTOM_LOGS.length - 1], "en");
   });
 
-  // Historical Period Dates Data (Dynamic state from starting to till date)
-  const [periodHistory, setPeriodHistory] = useState([
-    {
-      id: "c1",
-      cycleNum: "Cycle 1",
-      startDate: "2026-05-12",
-      endDate: "2026-05-17",
-      displayRange: "12 May – 17 May",
-      cycleLength: 30,
-      bleedingDays: 5,
-      flow: "Normal",
-      status: "Regular",
-      notes: "Mild cramping on Day 1-2"
-    },
-    {
-      id: "c2",
-      cycleNum: "Cycle 2",
-      startDate: "2026-06-12",
-      endDate: "2026-06-17",
-      displayRange: "12 Jun – 17 Jun",
-      cycleLength: 31,
-      bleedingDays: 5,
-      flow: "Normal",
-      status: "Regular",
-      notes: "Normal flow, good hydration"
-    },
-    {
-      id: "c3",
-      cycleNum: "Cycle 3",
-      startDate: "2026-07-14",
-      endDate: "2026-07-19",
-      displayRange: "14 Jul – 19 Jul",
-      cycleLength: 32,
-      bleedingDays: 5,
-      flow: "Heavy",
-      status: "Slight Delay (+2d)",
-      notes: "Heavy flow with fatigue"
-    },
-    {
-      id: "c4",
-      cycleNum: "Cycle 4",
-      startDate: "2026-08-18",
-      endDate: "2026-08-22",
-      displayRange: "18 Aug – 22 Aug",
-      cycleLength: 35,
-      bleedingDays: 4,
-      flow: "Moderate",
-      status: "Irregular (+5d)",
-      notes: "Work stress, delayed ovulation"
-    },
-    {
-      id: "c5",
-      cycleNum: "Cycle 5",
-      startDate: "2026-09-22",
-      endDate: "2026-09-27",
-      displayRange: "22 Sep – 27 Sep",
-      cycleLength: 35,
-      bleedingDays: 5,
-      flow: "Moderate",
-      status: "Irregular (+5d)",
-      notes: "Acne breakouts reported"
-    },
-    {
-      id: "c6",
-      cycleNum: "Cycle 6 (Current)",
-      startDate: "2026-10-04",
-      endDate: "2026-10-09",
-      displayRange: "04 Oct – 09 Oct",
-      cycleLength: 32,
-      bleedingDays: 5,
-      flow: "Light / Luteal",
-      status: "Active (Day 21)",
-      notes: "Next period expected in ~6 days"
+  // Historical Period Dates Data (Dynamically loaded from localStorage or default baseline)
+  const [periodHistory, setPeriodHistory] = useState(() => {
+    const saved = localStorage.getItem("symvella_period_history") || localStorage.getItem("sakhi_period_history");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {}
     }
-  ]);
+    return DEFAULT_PERIOD_HISTORY;
+  });
+
+  // Keep periodHistory synced with localStorage
+  useEffect(() => {
+    if (periodHistory && periodHistory.length > 0) {
+      try {
+        localStorage.setItem("symvella_period_history", JSON.stringify(periodHistory));
+      } catch (e) {}
+    }
+  }, [periodHistory]);
+
+  // Real-Time Dynamic Menstrual Cycle Prediction Engine
+  const cyclePrediction = useMemo(() => {
+    return predictCycleState({
+      periodHistory,
+      userProfile,
+      currentDate: new Date()
+    });
+  }, [periodHistory, userProfile]);
 
   // Persistent Daily Check-in Mobile Alarm Engine
   const [alarmEscalationStage, setAlarmEscalationStage] = useState("idle");
@@ -417,26 +448,23 @@ export function AppProvider({ children }) {
   }, [language]);
 
   // Add a new period date entry from user input
-  const addPeriodEntry = ({ startDate, endDate, flow, painLevel, notes, cycleLength }) => {
+  const addPeriodEntry = ({ startDate, endDate, flow, painLevel, notes }) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
     const bleedingDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1);
 
-    // Calculate or preserve cycle length
-    let calculatedCycleLength = cycleLength || userProfile?.cycleLength || 32;
+    // Calculate cycle length compared to last entry
     const lastEntry = periodHistory[periodHistory.length - 1];
-    if (lastEntry && lastEntry.startDate && lastEntry.startDate !== startDate) {
+    let calculatedCycleLength = 30;
+    if (lastEntry) {
       const prevStart = new Date(lastEntry.startDate);
       const cycleDiff = Math.abs(start - prevStart);
-      const diffDays = Math.ceil(cycleDiff / (1000 * 60 * 60 * 24));
-      if (diffDays >= 20 && diffDays <= 45) {
-        calculatedCycleLength = diffDays;
-      }
+      calculatedCycleLength = Math.max(20, Math.min(50, Math.ceil(cycleDiff / (1000 * 60 * 60 * 24))));
     }
 
-    const startMonth = start.toLocaleDateString("en-IN", { month: "short", day: "2-digit" });
-    const endMonth = end.toLocaleDateString("en-IN", { month: "short", day: "2-digit" });
+    const startMonth = start.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+    const endMonth = end.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
     const displayRange = `${startMonth} – ${endMonth}`;
 
     const newCycle = {
@@ -452,12 +480,29 @@ export function AppProvider({ children }) {
       notes: notes || "Logged by user"
     };
 
-    setPeriodHistory(prev => [...prev, newCycle]);
-    setUserProfile(prev => ({
-      ...prev,
-      lastPeriodDate: startDate,
-      cycleLength: calculatedCycleLength
-    }));
+    setPeriodHistory(prev => {
+      const combined = [...prev, newCycle].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+      const reindexed = combined.map((entry, idx) => ({
+        ...entry,
+        cycleNum: idx === combined.length - 1 ? `Cycle ${idx + 1} (Current)` : `Cycle ${idx + 1}`
+      }));
+      try {
+        localStorage.setItem("symvella_period_history", JSON.stringify(reindexed));
+      } catch (e) {}
+      return reindexed;
+    });
+
+    setUserProfile(prev => {
+      const updated = {
+        ...prev,
+        lastPeriodDate: startDate,
+        cycleLength: calculatedCycleLength
+      };
+      try {
+        localStorage.setItem("symvella_user_profile", JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
   };
 
   // Add a new symptom log entry & generate daily report
@@ -466,15 +511,9 @@ export function AppProvider({ children }) {
     // 1. Immediately silence and deactivate persistent alarm
     stopAlarm();
 
-    const currentCycleStatus = calculateCycleStatus(
-      userProfile?.lastPeriodDate,
-      userProfile?.cycleLength || 32,
-      userProfile?.periodDuration || 5
-    );
-
     const formatted = {
       date: new Date().toISOString().split("T")[0],
-      cycleDay: newLog.cycleDay || currentCycleStatus.cycleDay || 1,
+      cycleDay: (symptomLogs.length % 28) + 1,
       ...newLog
     };
     setSymptomLogs(prev => [...prev, formatted]);
@@ -554,6 +593,7 @@ export function AppProvider({ children }) {
         addSymptomLog,
         periodHistory,
         addPeriodEntry,
+        cyclePrediction,
         isPeriodModalOpen,
         setIsPeriodModalOpen,
         isCheckInOpen,

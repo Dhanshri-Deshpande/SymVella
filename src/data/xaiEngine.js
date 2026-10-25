@@ -2,6 +2,7 @@
 // Formats longitudinal patient data into standardized healthcare evaluations aligned with FOGSI, Rotterdam, and ICMR protocols.
 
 import { runUnifiedClinicalModel, extractFeatureVector } from "./unifiedModelEngine.js";
+import { predictCycleState } from "../services/cycleEngine.js";
 
 export function analyzeHealthPatterns(symptomLogs = [], profile = {}, periodHistory = [], language = "en") {
   // Aggregate recent logs
@@ -140,17 +141,31 @@ export function analyzeHealthPatterns(symptomLogs = [], profile = {}, periodHist
     }
   ];
 
+  // Dynamic cycle prediction for Digital Twin
+  const cyclePred = predictCycleState({
+    periodHistory,
+    userProfile: profile,
+    currentDate: new Date()
+  });
+
+  const nextDateObj = cyclePred.nextPeriodDate instanceof Date && !isNaN(cyclePred.nextPeriodDate) 
+    ? cyclePred.nextPeriodDate 
+    : new Date();
+  const flareDay1 = new Date(nextDateObj.getTime() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const flareDay2 = new Date(nextDateObj.getTime() - 1 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const flareDay3 = nextDateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
   return {
     patterns,
     unifiedModel: modelInfo,
     digitalTwin: {
-      predictedNextPeriod: isHindi ? "लगभग 6 दिनों में अनुमानित (1 नवंबर, 2026)" : "Estimated in ~6 Days (Nov 1, 2026)",
-      fertileWindow: isHindi ? "8 दिन पहले समाप्त हुई" : "Concluded 8 days ago",
-      currentPhase: isHindi ? "लेट ल्यूटियल फेज़ (दिन 21 / 32)" : "Late Luteal Phase (Cycle Day 21 of 32)",
-      flareRiskDays: ["Oct 31", "Nov 1", "Nov 2"],
-      phaseDescription: isHindi
-        ? "प्रोजेस्टेरोन का स्तर कम हो रहा है। सामान्य शारीरिक लक्षणों में हल्का भारीपन, भूख बढ़ना और संवेदनशीलता शामिल हैं।"
-        : "Circulating progesterone is declining. Normal physiological indicators include mild water retention, increased appetite, and heightened sensory sensitivity."
+      predictedNextPeriod: isHindi 
+        ? `अनुमानित: ${cyclePred.countdownLabel} (${cyclePred.predictedNextPeriodFormatted})`
+        : `Estimated: ${cyclePred.countdownLabel} (${cyclePred.predictedNextPeriodFormatted})`,
+      fertileWindow: cyclePred.fertileWindowText,
+      currentPhase: `${cyclePred.currentPhase.name} (Day ${cyclePred.currentCycleDay} of ${cyclePred.predictedCycleLength})`,
+      flareRiskDays: [flareDay1, flareDay2, flareDay3],
+      phaseDescription: cyclePred.currentPhase.desc
     }
   };
 }
