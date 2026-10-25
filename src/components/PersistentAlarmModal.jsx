@@ -25,7 +25,7 @@ export default function PersistentAlarmModal() {
 
   if (!isAlarmRinging) return null;
 
-  const scheduledTime = userProfile?.alarmSettings?.time || "20:30";
+  const scheduledTime = userProfile?.alarmSettings?.time || "";
 
   const handleStartCheckIn = () => {
     // Open check-in modal directly

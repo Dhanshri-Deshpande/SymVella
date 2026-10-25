@@ -137,6 +137,13 @@ export function AppProvider({ children }) {
     } else {
       base.name = "Dhanshri";
     }
+
+    // Default check-in time is empty unless explicitly configured by user
+    if (base.alarmSettings && base.alarmSettings.time === "20:30") {
+      base.alarmSettings.time = "";
+      base.alarmSettings.enabled = false;
+    }
+
     return base;
   });
 

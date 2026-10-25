@@ -13,8 +13,8 @@ export const INITIAL_USER_PROFILE = {
   discreetPin: "1234",
   isDiscreetMode: false,
   alarmSettings: {
-    enabled: true,
-    time: "20:30",
+    enabled: false,
+    time: "",
     graceMinutes: 30,
     tone: "calm-bell",
     vibrate: true,

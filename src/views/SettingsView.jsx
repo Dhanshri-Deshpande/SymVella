@@ -44,7 +44,11 @@ export default function SettingsView() {
   const [lifeStage, setLifeStage] = useState(userProfile.lifeStage);
   const [cycleLength, setCycleLength] = useState(userProfile.cycleLength);
   const [periodDuration, setPeriodDuration] = useState(userProfile.periodDuration);
-  const [checkInTime, setCheckInTime] = useState(userProfile.alarmSettings?.time || "20:30");
+  const [checkInTime, setCheckInTime] = useState(
+    userProfile.alarmSettings?.time && userProfile.alarmSettings.time !== "20:30"
+      ? userProfile.alarmSettings.time
+      : ""
+  );
   const [selectedSound, setSelectedSound] = useState(userProfile.alarmSettings?.tone || "gentle");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
@@ -316,15 +320,29 @@ export default function SettingsView() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
             {/* Scheduled Time */}
             <div>
-              <label className="font-semibold text-gray-700 text-xs block mb-1.5">
-                {t("settings.reminder_time", "Scheduled Time")}
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-semibold text-gray-700 text-xs block">
+                  {t("settings.reminder_time", "Daily Scheduled Check-in Time")}
+                </label>
+                {checkInTime && (
+                  <button
+                    type="button"
+                    onClick={() => setCheckInTime("")}
+                    className="text-[11px] text-gray-400 hover:text-rose-600 font-medium cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
               <input
                 type="time"
                 value={checkInTime}
                 onChange={(e) => setCheckInTime(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs text-gray-900 font-mono focus:outline-none focus:border-purple-600"
               />
+              <p className="text-[11px] text-gray-400 mt-1">
+                {checkInTime ? `Reminder scheduled for ${checkInTime}` : "No time scheduled by default (Optional)"}
+              </p>
             </div>
 
             {/* Choose from 4 Alarm Sounds */}

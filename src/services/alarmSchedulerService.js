@@ -17,8 +17,8 @@ export function hasCompletedTodayCheckIn(symptomLogs = []) {
   return symptomLogs.some(log => log.date === todayStr);
 }
 
-export function isCheckInTimePassed(scheduledTime = "20:30") {
-  if (!scheduledTime) return false;
+export function isCheckInTimePassed(scheduledTime = "") {
+  if (!scheduledTime || typeof scheduledTime !== "string" || !scheduledTime.trim()) return false;
   const now = new Date();
   const [schedH, schedM] = scheduledTime.split(":").map(Number);
   if (isNaN(schedH) || isNaN(schedM)) return false;
@@ -30,6 +30,9 @@ export function isCheckInTimePassed(scheduledTime = "20:30") {
 }
 
 export function shouldAlarmRing({ symptomLogs = [], alarmSettings = {}, snoozeUntil = 0 }) {
+  // If no time is configured by the user, do not ring
+  if (!alarmSettings?.time || !alarmSettings.time.trim()) return false;
+
   // If alarms are explicitly disabled by the user
   if (alarmSettings?.enabled === false) return false;
 
@@ -40,7 +43,7 @@ export function shouldAlarmRing({ symptomLogs = [], alarmSettings = {}, snoozeUn
   if (hasCompletedTodayCheckIn(symptomLogs)) return false;
 
   // Check if scheduled time has passed
-  return isCheckInTimePassed(alarmSettings?.time || "20:30");
+  return isCheckInTimePassed(alarmSettings.time);
 }
 
 export const ALARM_SOUND_OPTIONS = [
