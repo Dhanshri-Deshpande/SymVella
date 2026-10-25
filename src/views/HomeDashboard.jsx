@@ -206,22 +206,6 @@ export default function HomeDashboard() {
           </button>
         </div>
 
-        {/* Real-Time Dynamic Insight Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1">
-          <div className="p-3 rounded-2xl bg-pink-50/70 border border-pink-100 flex flex-col">
-            <span className="text-[10px] font-semibold text-pink-700 uppercase tracking-wider">{t("home.avg_cycle_stat", "Historical Avg")}</span>
-            <span className="text-sm sm:text-base font-bold text-gray-900 mt-0.5">~{dynamicCycle.predictedCycleLength} {t("home.days_unit", "Days")}</span>
-          </div>
-          <div className="p-3 rounded-2xl bg-purple-50/70 border border-purple-100 flex flex-col">
-            <span className="text-[10px] font-semibold text-purple-700 uppercase tracking-wider">{t("home.variance_stat", "Cycle Variance")}</span>
-            <span className="text-sm sm:text-base font-bold text-gray-900 mt-0.5">±{dynamicCycle.cycleVariance} {t("home.days_unit", "Days")}</span>
-          </div>
-          <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-100 flex flex-col col-span-2 sm:col-span-1">
-            <span className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wider">{t("home.fertile_window_stat", "Fertile Window")}</span>
-            <span className="text-xs sm:text-sm font-bold text-gray-900 mt-0.5">{dynamicCycle.fertileWindowText}</span>
-          </div>
-        </div>
-
         {/* Recharts Timeline Graph */}
         <div className="h-68 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
