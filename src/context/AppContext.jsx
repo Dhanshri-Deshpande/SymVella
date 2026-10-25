@@ -8,6 +8,7 @@ import {
   alarmAudioEngineInstance 
 } from "../services/alarmSchedulerService";
 import { translate } from "../data/translations";
+import { calculateCycleStatus } from "../data/cycleCalculator";
 
 const AppContext = createContext();
 
@@ -416,19 +417,22 @@ export function AppProvider({ children }) {
   }, [language]);
 
   // Add a new period date entry from user input
-  const addPeriodEntry = ({ startDate, endDate, flow, painLevel, notes }) => {
+  const addPeriodEntry = ({ startDate, endDate, flow, painLevel, notes, cycleLength }) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const diffTime = Math.abs(end - start);
     const bleedingDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1);
 
-    // Calculate cycle length compared to last entry
+    // Calculate or preserve cycle length
+    let calculatedCycleLength = cycleLength || userProfile?.cycleLength || 32;
     const lastEntry = periodHistory[periodHistory.length - 1];
-    let calculatedCycleLength = 30;
-    if (lastEntry) {
+    if (lastEntry && lastEntry.startDate && lastEntry.startDate !== startDate) {
       const prevStart = new Date(lastEntry.startDate);
       const cycleDiff = Math.abs(start - prevStart);
-      calculatedCycleLength = Math.max(20, Math.min(45, Math.ceil(cycleDiff / (1000 * 60 * 60 * 24))));
+      const diffDays = Math.ceil(cycleDiff / (1000 * 60 * 60 * 24));
+      if (diffDays >= 20 && diffDays <= 45) {
+        calculatedCycleLength = diffDays;
+      }
     }
 
     const startMonth = start.toLocaleDateString("en-IN", { month: "short", day: "2-digit" });
@@ -462,9 +466,15 @@ export function AppProvider({ children }) {
     // 1. Immediately silence and deactivate persistent alarm
     stopAlarm();
 
+    const currentCycleStatus = calculateCycleStatus(
+      userProfile?.lastPeriodDate,
+      userProfile?.cycleLength || 32,
+      userProfile?.periodDuration || 5
+    );
+
     const formatted = {
       date: new Date().toISOString().split("T")[0],
-      cycleDay: (symptomLogs.length % 28) + 1,
+      cycleDay: newLog.cycleDay || currentCycleStatus.cycleDay || 1,
       ...newLog
     };
     setSymptomLogs(prev => [...prev, formatted]);

@@ -1237,15 +1237,17 @@ export function translate(lang = "en", path = "", params = {}) {
         break;
       }
     }
-    val = engVal ?? path;
+    val = engVal ?? (typeof params === "string" ? params : path);
   }
 
   if (typeof val !== "string") return val;
 
-  // Replace tokens like {day}, {time}, {total}
-  Object.keys(params).forEach(param => {
-    val = val.replace(new RegExp(`\\{${param}\\}`, "g"), params[param]);
-  });
+  // Replace tokens like {day}, {time}, {total} if params is an object
+  if (params && typeof params === "object") {
+    Object.keys(params).forEach(param => {
+      val = val.replace(new RegExp(`\\{${param}\\}`, "g"), params[param]);
+    });
+  }
 
   return val;
 }

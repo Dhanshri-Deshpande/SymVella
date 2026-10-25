@@ -21,6 +21,7 @@ import {
   Cell 
 } from "recharts";
 import confetti from "canvas-confetti";
+import { calculateCycleStatus } from "../data/cycleCalculator";
 
 export default function HomeDashboard() {
   const { 
@@ -43,8 +44,25 @@ export default function HomeDashboard() {
     || userProfile?.name 
     || "Friend";
 
-  const recentLog = symptomLogs[symptomLogs.length - 1];
-  const cycleDay = recentLog?.cycleDay || 21;
+  // Derive dynamic cycle metrics from last logged period and user settings
+  const lastPeriodStartDate = periodHistory && periodHistory.length > 0 
+    ? periodHistory[periodHistory.length - 1].startDate 
+    : (userProfile?.lastPeriodDate || "2026-10-04");
+
+  const cycleStatus = calculateCycleStatus(
+    lastPeriodStartDate, 
+    userProfile?.cycleLength || 32, 
+    userProfile?.periodDuration || 5
+  );
+
+  const {
+    cycleDay,
+    cycleLength,
+    daysUntilNext,
+    predictedNextPeriodFormatted,
+    phaseName,
+    phaseDesc
+  } = cycleStatus;
 
   const triggerStreakCelebration = () => {
     confetti({
@@ -78,7 +96,7 @@ export default function HomeDashboard() {
               {t("home.greeting", "Namaste")}, {displayName} 🌸
             </h2>
             <p className="text-pink-100/90 text-sm max-w-lg leading-relaxed">
-              {t("home.status_lead", "Your body is currently in the")} <strong>{t("home.phase_luteal", "Late Luteal Phase")}</strong> ({t("home.day_count", { day: cycleDay, total: userProfile.cycleLength })}). {t("home.checkin_prompt", "Today's check-in takes only 90 seconds.")}
+              {t("home.status_lead", "Your body is currently in the")} <strong>{phaseName}</strong> ({t("home.day_count", { day: cycleDay, total: cycleLength })}). {phaseDesc}
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2.5">
@@ -98,8 +116,12 @@ export default function HomeDashboard() {
             </div>
           </div>
 
-          {/* Cycle Intelligence Ring */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-5 flex flex-col items-center text-center shrink-0 w-full md:w-56">
+          {/* Cycle Intelligence Ring - Clickable to view or adjust cycle dates */}
+          <div 
+            onClick={() => setIsPeriodModalOpen(true)}
+            className="bg-white/10 hover:bg-white/15 cursor-pointer transition-all backdrop-blur-md border border-white/20 rounded-3xl p-5 flex flex-col items-center text-center shrink-0 w-full md:w-56 group"
+            title="Click to adjust cycle day or log period dates"
+          >
             <div className="relative w-28 h-28 flex items-center justify-center mb-3">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.2)" strokeWidth="8" fill="transparent" />
@@ -110,18 +132,23 @@ export default function HomeDashboard() {
                   stroke="#EE9FE1" 
                   strokeWidth="8" 
                   strokeDasharray="251.2" 
-                  strokeDashoffset={251.2 * (1 - cycleDay / userProfile.cycleLength)} 
+                  strokeDashoffset={251.2 * (1 - Math.min(1, cycleDay / cycleLength))} 
                   strokeLinecap="round" 
                   fill="transparent" 
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-xl font-black">Day {cycleDay}</span>
-                <span className="text-[10px] text-pink-200 uppercase font-medium">of {userProfile.cycleLength}</span>
+                <span className="text-[10px] text-pink-200 uppercase font-medium">of {cycleLength}</span>
               </div>
             </div>
-            <p className="text-xs font-semibold text-white">{t("home.next_period", "Next Period in")} ~6 {t("home.days_unit", "Days")}</p>
-            <p className="text-[11px] text-pink-200">Predicted: Nov 1, 2026</p>
+            <p className="text-xs font-semibold text-white">
+              {t("home.next_period", "Next Period in")} ~{daysUntilNext} {t("home.days_unit", "Days")}
+            </p>
+            <p className="text-[11px] text-pink-200">Predicted: {predictedNextPeriodFormatted}</p>
+            <span className="mt-2 text-[10px] bg-white/20 group-hover:bg-white/30 text-white px-2.5 py-0.5 rounded-full transition-all flex items-center gap-1 font-medium">
+              ✏️ Tap to adjust day
+            </span>
           </div>
         </div>
 
