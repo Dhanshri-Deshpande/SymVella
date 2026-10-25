@@ -287,36 +287,36 @@ export function runUnifiedClinicalModel(logData, profile, periodHistory, languag
     predictions: {
       pcos: {
         score: pcosProbability,
-        riskLevel: pcosProbability > 70 ? "Moderate-High Clinical Tendency" : pcosProbability > 40 ? "Mild Tendency" : "Low Risk",
-        confidence: "High Diagnostic Concordance (Rotterdam Criteria Aligned - 90.0%)",
+        riskLevel: pcosProbability > 70 ? "Moderate-High Tendency" : pcosProbability > 40 ? "Mild Tendency" : "Low Risk",
+        confidence: "Doctor Standard (Rotterdam Criteria)",
         topFactor: pcosShap[0],
         shapFactors: pcosShap.slice(0, 4)
       },
       dysmenorrhea: {
         score: painProbability,
-        riskLevel: painProbability > 65 ? "Severe Myometrial Discomfort" : painProbability > 35 ? "Moderate Discomfort" : "Minimal Baseline",
-        confidence: "High Clinical Concordance (VAS Validated - 94.2%)",
+        riskLevel: painProbability > 65 ? "High Cramps & Pain" : painProbability > 35 ? "Moderate Cramps" : "Mild / Normal",
+        confidence: "Standard Pain Scale (VAS Validated)",
         topFactor: painShap[0],
         shapFactors: painShap.slice(0, 4)
       },
       anemia: {
         score: anemiaProbability,
-        riskLevel: anemiaProbability > 60 ? "Moderate-High Depletion Risk" : "Normal Reserves",
-        confidence: "High Clinical Concordance (ICMR Guideline Aligned - 96.8%)",
+        riskLevel: anemiaProbability > 60 ? "Low Iron Risk" : "Normal Iron Levels",
+        confidence: "Health Standard (ICMR Aligned)",
         topFactor: anemiaShap[0],
         shapFactors: anemiaShap.slice(0, 4)
       },
       dailyTriage: {
         score: dailyUrgencyScore,
         isRedFlag: isRedFlagEmergency,
-        urgency: isRedFlagEmergency ? "Acute Clinical Attention Required" : dailyUrgencyScore > 60 ? "Active Symptom Management Indicated" : "Physiological Baseline"
+        urgency: isRedFlagEmergency ? "Doctor Checkup Recommended" : dailyUrgencyScore > 60 ? "Rest & Self-Care Recommended" : "Healthy & Balanced"
       },
       remedies: predictedRemedies
     },
     counterfactual: {
       sleepSuggestion: sleepShortage > 0 
-        ? `Extending nightly restorative sleep to 7.5 hrs (+${sleepShortage.toFixed(1)}h) is projected to decrease neuroendocrine stress and pain attribution by ${counterfactualSleepBenefit}%.`
-        : "Sleep duration meets physiological restorative standards, supporting endocrine and metabolic stability."
+        ? `Sleeping 7.5 hours each night (+${sleepShortage.toFixed(1)}h more) can help lower body stress and cramps by about ${counterfactualSleepBenefit}%.`
+        : "Your sleep duration is great and helps keep your hormones and energy balanced."
     }
   };
 }
@@ -331,7 +331,8 @@ export function computeWeeklyLongitudinalMetrics(symptomLogs = []) {
       avgPain: 3.5,
       avgHydration: 2.1,
       correlationSleepPain: -0.68,
-      correlationStressPain: 0.54
+      correlationStressPain: 0.54,
+      correlationInterpretation: "When you sleep more, cramps and pain feel noticeably lighter the next day."
     };
   }
 
@@ -364,7 +365,7 @@ export function computeWeeklyLongitudinalMetrics(symptomLogs = []) {
     avgStress: Number(meanStress.toFixed(1)),
     correlationSleepPain: Number(rSleepPain.toFixed(2)),
     correlationInterpretation: rSleepPain < -0.3 
-      ? "Strong Inverse Correlation: Short sleep days strongly exacerbate next-day pelvic pain."
-      : "Moderate Correlation: Stable sleep moderates pain perception."
+      ? "When you sleep more, cramps and pain feel noticeably lighter the next day."
+      : "Consistent, restful sleep helps keep your pain and energy steady."
   };
 }
